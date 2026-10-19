@@ -286,8 +286,8 @@ function openGh(){
 
 /* ---------- Request ---------- */
 const REQ={plr:'',qtps:new Set(),tpl:'simple'};
-const testsOf=plr=>Object.values((DB&&DB.tests)||{}).filter(t=>t.plr===plr).sort((a,b)=>(a.sequence||0)-(b.sequence||0)||String(a.qtp).localeCompare(b.qtp));
-const chosenTests=()=>testsOf(REQ.plr).filter(t=>REQ.qtps.has(t.qtp));
+const testsOf=plr=>Object.entries((DB&&DB.tests)||{}).filter(([,t])=>t.plr===plr).map(([id,t])=>({...t,_id:id})).sort((a,b)=>(a.sequence||0)-(b.sequence||0)||String(a.qtp).localeCompare(b.qtp));
+const chosenTests=()=>testsOf(REQ.plr).filter(t=>REQ.qtps.has(t._id));   // REQ.qtps holds test line ids: one PLR can repeat a QTP in several lines
 const person=id=>((DB.personas||{})[id]||{}).nombre;
 const bench=id=>((DB.bancos||{})[id]||{}).nombre;
 const qtpName=c=>((DB.qtps||{})[c]||{}).name;
@@ -295,7 +295,7 @@ const statusChip=t=>`<span class="chip ${t.status==='Completed'||t.status==='Rep
 function setPlr(v){
   v=v.trim().toUpperCase(); if(/^\d+$/.test(v)) v='PLR'+v.padStart(6,'0');
   if(v===REQ.plr) return; REQ.plr=v; markStale();
-  const ts=testsOf(v), first=ts.find(t=>t.status!=='Cancelled')||ts[0]; REQ.qtps=new Set(first?[first.qtp]:[]);   // one report per test line
+  const ts=testsOf(v), first=ts.find(t=>t.status!=='Cancelled')||ts[0]; REQ.qtps=new Set(first?[first._id]:[]);   // one report per test line
   prefillMeta(); render();
 }
 function renderRequest(){
@@ -305,8 +305,8 @@ function renderRequest(){
   const ts=testsOf(REQ.plr);
   if(!ts.length){box.innerHTML=`<p class="empty" style="margin-top:12px">${esc(REQ.plr)} is not in Control de ensayos.</p>`; info.innerHTML=''; return;}
   box.innerHTML=`<div class="field" style="margin-top:14px"><label>Test line (QTP)${ts.length>1?' · one report per line: when this one is done, choose the next':''}</label><div class="qtps">${ts.map(t=>`
-    <label class="qtp"><input type="radio" name="qtp" value="${esc(t.qtp)}" ${REQ.qtps.has(t.qtp)?'checked':''}>
-    <span><b>${esc(t.qtp)}</b> ${esc(t.title||qtpName(t.qtp)||'')} ${statusChip(t)} ${t.result&&t.result!=='N/A'?`<span class="chip ${t.result==='Pass'?'ok':'crit'}">${esc(t.result)}</span>`:''}</span></label>`).join('')}</div></div>`;
+    <label class="qtp"><input type="radio" name="qtp" value="${esc(t._id)}" ${REQ.qtps.has(t._id)?'checked':''}>
+    <span><b>${esc(t.qtp)}</b> ${esc(t.title||qtpName(t.qtp)||'')} ${statusChip(t)}${ts.filter(x=>x.qtp===t.qtp).length>1?` <span class="muted" style="font-size:13px">line ${esc(t.sequence)}${t.start?` · from ${esc(fmtDate(t.start))}`:''}${t.pieces?` · ${esc(t.pieces)} samples`:''}</span>`:''} ${t.result&&t.result!=='N/A'?`<span class="chip ${t.result==='Pass'?'ok':'crit'}">${esc(t.result)}</span>`:''}</span></label>`).join('')}</div></div>`;
   const sel=chosenTests();
   if(!sel.length){info.innerHTML=''; return;}
   const f=sel[0], row=(k,v)=>v===''||v==null?'':`<tr><th>${k}</th><td>${v}</td></tr>`;
@@ -534,7 +534,7 @@ function checks(){
     const plrs=new Set(); FILES.forEach(f=>(f.path.toUpperCase().match(/PLR\s?0*\d{4,6}/g)||[]).forEach(m=>plrs.add('PLR'+m.replace(/\D/g,'').padStart(6,'0'))));
     plrs.delete(REQ.plr); if(plrs.size) add('warn',`Some file names mention another request: ${[...plrs].join(', ')}.`,`Check that those files belong to ${REQ.plr} and remove them if not.`);
     const qs=new Set(); FILES.forEach(f=>(f.path.toUpperCase().match(/QTP\s?\d{3,5}/g)||[]).forEach(m=>qs.add('QTP'+m.replace(/\D/g,'').padStart(4,'0'))));
-    const other_q=[...qs].filter(q=>!REQ.qtps.has(q)); if(other_q.length&&ts.length) add('warn',`Some file names mention another test line: ${other_q.join(', ')}.`,'Each line has its own report. Leave those files out of this one, or use them when you prepare the report of that line.');
+    const mine=new Set(ts.map(t=>t.qtp)), other_q=[...qs].filter(q=>!mine.has(q)); if(other_q.length&&ts.length) add('warn',`Some file names mention another test line: ${other_q.join(', ')}.`,'Each line has its own report. Leave those files out of this one, or use them when you prepare the report of that line.');
   }
   if(ts.length&&!/^QTR\d{3,5}-\d+$/i.test(META.number.trim())) add('crit',`The report number "${META.number}" is not complete.`,`Complete it in step 1 with the report sequence of ${ts[0].qtp}, e.g. QTR${String(ts[0].qtp).replace(/\D/g,'')}-1 for its first report.`);
   if(ts.length&&!/^\d{2}\/\d{2}\/\d{4}$/.test(META.date.trim())) add('warn','The report date is not in the dd/mm/yyyy format.','Correct it in step 1.');
@@ -1106,7 +1106,8 @@ document.addEventListener('change',e=>{
 /* Another test line is another report: the files stay (the folder may hold both lines), the report of the previous line goes. */
 function chooseQtp(q){
   if(REQ.qtps.has(q)) return;
-  if(AI.draft&&!confirm(`Start the report of ${q}? The report of ${[...REQ.qtps].join(', ')} will be cleared, so download its PDF first if you need it.`)){render(); return;}
+  const line=id=>{const t=testsOf(REQ.plr).find(t=>t._id===id); return t?`${t.qtp} (line ${t.sequence})`:id;};
+  if(AI.draft&&!confirm(`Start the report of ${line(q)}? The report of ${[...REQ.qtps].map(line).join(', ')} will be cleared, so download its PDF first if you need it.`)){render(); return;}
   REQ.qtps=new Set([q]);
   if(AI.draft){clearTimeout(PDF.timer); PDF.gen++; if(PDF.url) URL.revokeObjectURL(PDF.url); PDF.url=''; PDF.final=false; PDF.busy=false;
     Object.assign(AI,{draft:null,tpl:null,source:null,error:'',answers:'',stale:false,edited:false,solved:new Set()});}
