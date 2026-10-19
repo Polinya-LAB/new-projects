@@ -113,6 +113,25 @@ table.kv tr.sub td{border-bottom:0}
 .issue .fix::before{content:"Fix: ";font-weight:600;color:var(--fg)}
 .banner{border:1px solid var(--line);background:var(--surface);border-left:4px solid var(--warn);border-radius:var(--r);padding:10px 14px}
 .empty{color:var(--muted);font-size:14px;margin:0}
+.ai-bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.ai-bar .sp{flex:1}
+.ai-bar input[type=email]{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:7px 10px;min-width:240px}
+.issue .src{font-family:var(--f-mono);font-size:11px;color:var(--muted);margin-top:2px}
+.issue .tag{font-family:var(--f-mono);font-size:10px;border:1px solid currentColor;border-radius:3px;padding:0 4px;margin-left:6px;color:var(--accent);font-weight:500}
+textarea.answers{width:100%;min-height:80px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 10px;margin-top:10px}
+.draft{border:1px solid var(--line);border-radius:var(--r);padding:20px 24px;background:#fff;color:#1a1a1a;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;margin-top:12px}
+.draft h3{font-family:Arial,Helvetica,sans-serif;font-size:20px;margin:0 0 4px}
+.draft h4{font-size:14px;margin:16px 0 4px;text-transform:uppercase;letter-spacing:.03em;color:#0A6C7C}
+.draft p{margin:4px 0;white-space:pre-wrap}
+.draft table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px}
+.draft th,.draft td{border:1px solid #bbb;padding:3px 6px;text-align:left}
+.draft th{background:#eef3f4}
+.draft .cap{font-size:11px;color:#555;margin-top:2px}
+.draft .figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.draft .figs img{width:100%;border:1px solid #ccc}
+.draft .miss{background:#F7E8CC}
+.draft .res{display:inline-block;padding:2px 10px;border-radius:3px;font-weight:700;background:#eee}
+.draft .res.Pass{background:#D8EEE1;color:#2D7F55} .draft .res.Fail{background:#F6D9D6;color:#B8322B}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:var(--r);z-index:50;max-width:calc(100% - 32px)}
 dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);padding:0;width:min(520px,calc(100% - 32px))}
 dialog::backdrop{background:rgba(0,0,0,.35)}
@@ -130,7 +149,7 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 </div></header>
 
 <main>
-  <div class="banner" id="banner"><b>Work in progress.</b> Steps 1 and 2 work: they read the test from Control de ensayos and check the data you add. The AI draft (step 3) and the final PDF (step 4) will be connected once the report templates are in.</div>
+  <div class="banner" id="banner"><b>Work in progress.</b> Steps 1 and 2 work and step 3 checks the data. The AI draft is being connected; once it is, step 4 shows the draft with a provisional layout until the lab templates are in.</div>
 
   <section class="step" id="s1">
     <header><span class="n">1</span><h2>Request</h2><p>The test details come from Control de ensayos.</p></header>
@@ -165,11 +184,12 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
   <section class="step" id="s3">
     <header><span class="n">3</span><h2>Preliminary review</h2><p>Problems found and how to fix them.</p></header>
     <div id="review"></div>
+    <div id="ai"></div>
   </section>
 
   <section class="step off" id="s4">
     <header><span class="n">4</span><h2>Final report</h2><p>PDF on screen, ready to download.</p></header>
-    <p class="empty">Available once the AI draft is connected and every problem in step 3 is solved.</p>
+    <div id="final"><p class="empty">Available once the AI draft is connected and every problem in step 3 is solved.</p></div>
   </section>
 </main>
 <dialog id="dlg"></dialog>
@@ -246,7 +266,7 @@ const qtpName=c=>((DB.qtps||{})[c]||{}).name;
 const statusChip=t=>`<span class="chip ${t.status==='Completed'||t.status==='Report'?'ok':/hold|Cancel|Not approved/.test(t.status)?'crit':'warn'}">${esc(t.status||'—')}</span>`;
 function setPlr(v){
   v=v.trim().toUpperCase(); if(/^\d+$/.test(v)) v='PLR'+v.padStart(6,'0');
-  if(v===REQ.plr) return; REQ.plr=v;
+  if(v===REQ.plr) return; REQ.plr=v; markStale();
   const ts=testsOf(v); REQ.qtps=new Set(ts.length===1?[ts[0].qtp]:ts.filter(t=>t.status!=='Cancelled').map(t=>t.qtp));
   render();
 }
@@ -293,7 +313,7 @@ function addFiles(list){
     FILES.push(f); n++;
   }
   FILES.sort((a,b)=>a.path.localeCompare(b.path,undefined,{numeric:true}));
-  if(n) toast(`${n} file${n>1?'s':''} added.`);
+  if(n){toast(`${n} file${n>1?'s':''} added.`); markStale();}
   render(); extractAll();
 }
 async function readEntry(entry,prefix,out){
@@ -316,7 +336,7 @@ $('#pick-dir').onclick=()=>$('#in-dir').click();
 $('#pick-files').onclick=()=>$('#in-files').click();
 $('#in-dir').onchange=e=>{addFiles([...e.target.files].map(file=>({file,path:file.webkitRelativePath||file.name}))); e.target.value='';};
 $('#in-files').onchange=e=>{addFiles([...e.target.files].map(file=>({file,path:file.name}))); e.target.value='';};
-$('#clear').onclick=()=>{FILES.forEach(f=>f.url&&URL.revokeObjectURL(f.url)); FILES.length=0; selFile=null; render();};
+$('#clear').onclick=()=>{FILES.forEach(f=>f.url&&URL.revokeObjectURL(f.url)); FILES.length=0; selFile=null; markStale(); render();};
 
 const CDN='https://cdnjs.cloudflare.com/ajax/libs/';
 const scripts={};
@@ -416,9 +436,13 @@ function checks(){
     const qs=new Set(); FILES.forEach(f=>(f.path.toUpperCase().match(/QTP\s?\d{3,5}/g)||[]).forEach(m=>qs.add('QTP'+m.replace(/\D/g,'').padStart(4,'0'))));
     const other_q=[...qs].filter(q=>!REQ.qtps.has(q)); if(other_q.length&&ts.length) add('warn',`Some file names mention a QTP not selected: ${other_q.join(', ')}.`,'Tick that QTP in step 1 if this report covers it, or remove those files.');
   }
+  if(AI.draft){
+    for(const i of AI.draft.issues) out.push({sev:i.severity,title:i.title,fix:i.fix,src:i.source,ai:true});
+    const adv=AI.draft.template_advice; if(adv&&adv.recommended!==REQ.tpl) out.push({sev:adv.recommended==='simple'?'warn':'info',title:`The AI recommends the ${adv.recommended} template.`,fix:adv.reason,ai:true});
+  }
   /* Template advice. Provisional rule until the current reports have been reviewed: the simple template fits one test with a
      clear result and little data; several tests, many files or Excel books with several sheets need the complex one. */
-  if(ts.length&&FILES.length){
+  if(!AI.draft&&ts.length&&FILES.length){
     const sheets=FILES.reduce((s,f)=>s+(f.sheets||0),0), dataFiles=FILES.filter(f=>['excel','csv','pdf','word','text'].includes(f.kind)).length;
     const simpleFits=ts.length===1&&dataFiles<=6&&sheets<=4;
     if(REQ.tpl==='complex'&&simpleFits) add('warn','The simple template would be enough for this report.',`It is one test (${ts[0].qtp}) with ${dataFiles} data file${dataFiles!==1?'s':''}. Choose "Simple" in step 1, or keep "Complex" if the client asked for it.`);
@@ -430,25 +454,124 @@ function renderReview(){
   const list=checks(), order={crit:0,warn:1,info:2,ok:3}; list.sort((a,b)=>order[a.sev]-order[b.sev]);
   const n=s=>list.filter(i=>i.sev===s).length;
   const head=REQ.plr&&FILES.length?`<div class="sum"><span><b>${n('crit')}</b> to solve</span><span><b>${n('warn')}</b> to check</span><span><b>${n('info')}</b> notes</span></div>`:'';
-  $('#review').innerHTML=head+(list.length?`<div class="issues">${list.map(i=>`<div class="issue ${i.sev}"><b>${esc(i.title)}</b>${i.fix?`<div class="fix">${esc(i.fix)}</div>`:''}</div>`).join('')}</div>`:'<div class="issue ok"><b>No problems found in the data.</b><div class="muted">The AI review of the content will be added here.</div></div>')
-    +`<p class="empty" style="margin-top:12px">Next: the AI will draft the report in English with the chosen template and add what it finds in the content to this list.</p>`;
+  $('#review').innerHTML=head+(list.length?`<div class="issues">${list.map(i=>`<div class="issue ${i.sev}"><b>${esc(i.title)}${i.ai?'<span class="tag">AI</span>':''}</b>${i.fix?`<div class="fix">${esc(i.fix)}</div>`:''}${i.src?`<div class="src">${esc(i.src)}</div>`:''}</div>`).join('')}</div>`:`<div class="issue ok"><b>No problems found in the data.</b><div class="muted">${AI.draft?'The AI found nothing either.':'The AI review of the content will be added here.'}</div></div>`)
+    +(AI.draft?'':`<p class="empty" style="margin-top:12px">The AI draft adds what it finds in the content of the files to this list.</p>`);
 }
 
-function render(){renderGh(); renderRequest(); renderFiles(); renderReview();}
+/* ---------- AI draft (Supabase Edge Function "draft-report") ----------
+   The page signs in with Supabase (email link, Fluidra addresses only) and sends the request to the function, which holds the
+   Anthropic key. The URL and the publishable key below are public by design: access is controlled by the sign-in. */
+const SUPA={url:'',key:''};   // filled in once the Automatic Reports project is connected
+const AI={client:null,user:null,busy:false,draft:null,error:'',answers:'',stale:false,sent:null,usage:null};
+const aiReady=()=>!!(SUPA.url&&SUPA.key);
+async function initAi(){
+  if(!aiReady()) return renderAi();
+  try{
+    await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js');
+    AI.client=window.supabase.createClient(SUPA.url,SUPA.key);
+    const {data}=await AI.client.auth.getSession(); AI.user=data.session&&data.session.user;
+    AI.client.auth.onAuthStateChange((_e,session)=>{AI.user=session&&session.user; renderAi();});
+  }catch(e){AI.error=e.message;}
+  renderAi();
+}
+async function signIn(){
+  const email=($('#ai-email').value||'').trim().toLowerCase();
+  if(!/@fluidra\.com$/.test(email)) return toast('Use your @fluidra.com email.');
+  const {error}=await AI.client.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
+  toast(error?'Could not send the link: '+error.message:`Sign-in link sent to ${email}. Open it in this browser.`);
+}
+/* Photos are reduced to 1568 px (what the AI reads at most) before sending. */
+async function photoB64(f){
+  const img=await new Promise((res,rej)=>{const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=f.url;});
+  const k=Math.min(1,1568/Math.max(img.naturalWidth,img.naturalHeight)), c=document.createElement('canvas');
+  c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',0.8).split(',')[1];
+}
+const bufB64=async file=>{const b=new Uint8Array(await file.arrayBuffer()); let s=''; for(let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(s);};
+const MAX_PHOTOS=60, MAX_TEXT=150000;
+async function buildPayload(){
+  const files=[]; let photos=0;
+  for(const f of FILES){
+    if(f.state!=='ok') continue;
+    if(f.kind==='image'){ if(++photos>MAX_PHOTOS) continue; files.push({path:f.path,kind:f.kind,info:f.info,image:await photoB64(f)}); }
+    else if(f.kind==='pdf'&&f.scanned&&f.size<15e6) files.push({path:f.path,kind:f.kind,pdf:await bufB64(f.file)});
+    else if(f.text) files.push({path:f.path,kind:f.kind,info:f.info,text:f.text.length>MAX_TEXT?f.text.slice(0,MAX_TEXT)+'\n[… truncated]':f.text});
+  }
+  const tests=chosenTests().map(t=>({...t,qtpName:qtpName(t.qtp),technician:person(t.techId)||t.arasTech,equipment:bench(t.equipmentId)||t.arasEquipment,qtpDefinition:(DB.qtps||{})[t.qtp]||null}));
+  return {template:REQ.tpl,plr:REQ.plr,tests,files,answers:AI.answers||undefined,_photosLeft:Math.max(0,photos-MAX_PHOTOS)};
+}
+async function draftReport(){
+  if(AI.busy) return;
+  AI.busy=true; AI.error=''; renderAi();
+  try{
+    const body=await buildPayload(); const left=body._photosLeft; delete body._photosLeft;
+    if(left) toast(`Only the first ${MAX_PHOTOS} photos are sent; ${left} left out.`);
+    const {data,error}=await AI.client.functions.invoke('draft-report',{body});
+    if(error){let msg=error.message; try{msg=(await error.context.json()).error||msg;}catch(e){} throw new Error(msg);}
+    AI.draft=data.draft; AI.usage=data.usage; AI.stale=false; AI.sent=Date.now();
+  }catch(e){AI.error=e.message||String(e);}
+  finally{AI.busy=false; render();}
+}
+function markStale(){ if(AI.draft) AI.stale=true; }
+function renderAi(){
+  const box=$('#ai'); if(!box) return;
+  let html='<div class="ai-bar">';
+  if(!aiReady()) html+='<span class="muted">The AI draft is not connected yet: the Supabase project is being set up.</span>';
+  else if(!AI.client) html+='<span class="muted">Loading…</span>';
+  else if(!AI.user) html+=`<span>Sign in to draft with AI:</span><input type="email" id="ai-email" placeholder="name@fluidra.com" autocomplete="email"><button class="btn" data-act="ai-signin">Send sign-in link</button>`;
+  else{
+    const ready=REQ.plr&&chosenTests().length&&FILES.length&&!FILES.some(f=>f.state==='pending'||f.state==='reading');
+    html+=`<span class="muted">Signed in as ${esc(AI.user.email)}</span><span class="sp"></span>
+      <button class="btn sm" data-act="ai-out">Sign out</button>
+      <button class="btn primary" data-act="ai-draft" ${ready&&!AI.busy?'':'disabled'}>${AI.busy?'Drafting… (this can take a few minutes)':AI.draft?'Draft again':'Draft report with AI'}</button>`;
+  }
+  html+='</div>';
+  if(AI.error) html+=`<div class="issue crit" style="margin-top:10px"><b>The draft failed: ${esc(AI.error)}</b></div>`;
+  if(AI.draft){
+    if(AI.stale) html+='<div class="banner" style="margin-top:10px">The request or the files changed after this draft. Draft again to update it.</div>';
+    html+=`<label class="field" style="display:block;margin-top:12px"><span class="eyebrow">Answers and corrections for the next draft</span>
+      <textarea class="answers" id="ai-answers" placeholder="E.g. Sample 3 was damaged before the test; the acceptance criterion is ≤ 5 bar.">${esc(AI.answers)}</textarea></label>`;
+  }
+  box.innerHTML=html;
+}
+const fill=t=>esc(t).replace(/\[MISSING:[^\]]*\]/g,m=>`<span class="miss">${m}</span>`);
+function renderFinal(){
+  const box=$('#final'), d=AI.draft&&AI.draft.report;
+  $('#s4').classList.toggle('off',!d);
+  if(!d){box.innerHTML='<p class="empty">Available once the AI draft is connected and every problem in step 3 is solved.</p>'; return;}
+  const sec=(h,t)=>t?`<h4>${h}</h4><p>${fill(t)}</p>`:'';
+  const img=p=>{const f=FILES.find(x=>x.path===p); return f&&f.url?`<img src="${f.url}" alt="">`:`<div class="miss">${esc(p)}</div>`;};
+  box.innerHTML=`<p class="muted" style="font-size:13px;margin:0">Provisional layout: the final PDF will use the ${REQ.tpl} template once it is in.</p>
+  <div class="draft">
+    <h3>${fill(d.title)}</h3><p class="cap">${esc(REQ.plr)} · ${chosenTests().map(t=>esc(t.qtp)).join(', ')} · <span class="res ${esc(d.result)}">${esc(d.result)}</span></p>
+    ${sec('Summary',d.summary)}${sec('Objective',d.objective)}
+    ${d.reference_documents.length?`<h4>Reference documents</h4><p>${d.reference_documents.map(fill).join('<br>')}</p>`:''}
+    ${d.samples.length?`<h4>Samples</h4><table><tr><th>ID</th><th>Description</th></tr>${d.samples.map(x=>`<tr><td>${fill(x.id)}</td><td>${fill(x.description)}</td></tr>`).join('')}</table>`:''}
+    ${d.equipment.length?`<h4>Equipment</h4><table><tr><th>Equipment</th><th>Identification</th><th>Calibration</th></tr>${d.equipment.map(x=>`<tr><td>${fill(x.name)}</td><td>${fill(x.identification)}</td><td>${fill(x.calibration)}</td></tr>`).join('')}</table>`:''}
+    ${sec('Procedure',d.procedure)}${sec('Results',d.results)}
+    ${d.tables.map(t=>`<table><tr>${t.columns.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${t.rows.map(r=>`<tr>${r.map(c=>`<td>${fill(c)}</td>`).join('')}</tr>`).join('')}</table><p class="cap">${esc(t.caption)}${t.source?` · Source: ${esc(t.source)}`:''}</p>`).join('')}
+    ${d.figures.length?`<div class="figs">${d.figures.map(f=>`<figure style="margin:0">${img(f.file)}<p class="cap">${esc(f.caption)}</p></figure>`).join('')}</div>`:''}
+    ${sec('Conclusion',d.conclusion)}${sec('Observations',d.observations)}
+  </div>`;
+}
+
+function render(){renderGh(); renderRequest(); renderFiles(); renderReview(); renderAi(); renderFinal();}
 
 /* ---------- Events ---------- */
 $('#plr').addEventListener('change',e=>setPlr(e.target.value));
 $('#plr').addEventListener('input',e=>{const v=e.target.value.trim().toUpperCase(); if(/^PLR\d{6}$/.test(v)) setPlr(v);});
-document.querySelectorAll('input[name="tpl"]').forEach(r=>r.addEventListener('change',e=>{REQ.tpl=e.target.value; renderReview();}));
-document.addEventListener('change',e=>{if(e.target.closest('#qtp-box')&&e.target.type==='checkbox'){e.target.checked?REQ.qtps.add(e.target.value):REQ.qtps.delete(e.target.value); render();}});
+document.querySelectorAll('input[name="tpl"]').forEach(r=>r.addEventListener('change',e=>{REQ.tpl=e.target.value; markStale(); render();}));
+document.addEventListener('change',e=>{if(e.target.closest('#qtp-box')&&e.target.type==='checkbox'){e.target.checked?REQ.qtps.add(e.target.value):REQ.qtps.delete(e.target.value); markStale(); render();}});
 document.addEventListener('click',e=>{
-  const a=e.target.closest('[data-act]'); if(a){e.preventDefault(); if(a.dataset.act==='gh') openGh(); if(a.dataset.act==='close-prev'){selFile=null; renderFiles();} return;}
+  const a=e.target.closest('[data-act]'); if(a){e.preventDefault(); if(a.dataset.act==='gh') openGh(); if(a.dataset.act==='close-prev'){selFile=null; renderFiles();}
+    if(a.dataset.act==='ai-signin') signIn(); if(a.dataset.act==='ai-draft') draftReport(); if(a.dataset.act==='ai-out') AI.client.auth.signOut(); return;}
   const r=e.target.closest('[data-file]'); if(r){const i=+r.dataset.file; selFile=selFile===i?null:i; renderFiles();}
 });
+document.addEventListener('input',e=>{if(e.target.id==='ai-answers') AI.answers=e.target.value;});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest&&e.target.closest('[data-file]'); if(r) r.click();}});
 $('#btn-gh').onclick=openGh;
 const q=new URLSearchParams(location.search).get('plr'); if(q){$('#plr').value=q;}
-render(); loadDb().then(()=>{if(q) setPlr(q);});
+render(); initAi(); loadDb().then(()=>{if(q) setPlr(q);});
 </script>
 </body>
 </html>
