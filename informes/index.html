@@ -149,7 +149,7 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 </div></header>
 
 <main>
-  <div class="banner" id="banner"><b>Work in progress.</b> Steps 1 and 2 work and step 3 checks the data. The AI draft is being connected; once it is, step 4 shows the draft with a provisional layout until the lab templates are in.</div>
+  <div class="banner" id="banner"><b>Work in progress.</b> Sign in with your Fluidra email to draft with AI. Step 4 shows the draft with a provisional layout until the lab templates are in.</div>
 
   <section class="step" id="s1">
     <header><span class="n">1</span><h2>Request</h2><p>The test details come from Control de ensayos.</p></header>
@@ -461,7 +461,7 @@ function renderReview(){
 /* ---------- AI draft (Supabase Edge Function "draft-report") ----------
    The page signs in with Supabase (email link, Fluidra addresses only) and sends the request to the function, which holds the
    Anthropic key. The URL and the publishable key below are public by design: access is controlled by the sign-in. */
-const SUPA={url:'',key:''};   // filled in once the Automatic Reports project is connected
+const SUPA={url:'https://otfmpfkbobetynoqqnnu.supabase.co',key:'sb_publishable_Txvap2YLR8Q9DjF_0fJx6A_k_Y5QEpQ'};   // project Automatic Reports (Polinya LAB)
 const AI={client:null,user:null,busy:false,draft:null,error:'',answers:'',stale:false,sent:null,usage:null};
 const aiReady=()=>!!(SUPA.url&&SUPA.key);
 async function initAi(){
@@ -516,7 +516,7 @@ function markStale(){ if(AI.draft) AI.stale=true; }
 function renderAi(){
   const box=$('#ai'); if(!box) return;
   let html='<div class="ai-bar">';
-  if(!aiReady()) html+='<span class="muted">The AI draft is not connected yet: the Supabase project is being set up.</span>';
+  if(!aiReady()) html+='<span class="muted">The AI draft is not connected.</span>';
   else if(!AI.client) html+='<span class="muted">Loading…</span>';
   else if(!AI.user) html+=`<span>Sign in to draft with AI:</span><input type="email" id="ai-email" placeholder="name@fluidra.com" autocomplete="email"><button class="btn" data-act="ai-signin">Send sign-in link</button>`;
   else{
