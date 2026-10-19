@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Test Reports · Laboratorio Polinyà</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Same tokens and components as Control de ensayos and Plan de calibraciones. */
+:root{
+  --bg:#EEF3F4; --surface:#FFFFFF; --surface-2:#E4ECEE; --fg:#12242B; --muted:#566C74; --line:#CFDCE0;
+  --accent:#0A6C7C; --accent-ink:#FFFFFF; --accent-soft:#D3EAEE;
+  --ok:#2D7F55; --ok-soft:#D8EEE1; --warn:#A8690A; --warn-soft:#F7E8CC; --crit:#B8322B; --crit-soft:#F6D9D6; --info:#3866AE; --info-soft:#DCE6F5;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D161A; --surface:#142026; --surface-2:#1B2A31; --fg:#E1EBEE; --muted:#90A4AC; --line:#293B43;
+  --accent:#43B4C4; --accent-ink:#04232A; --accent-soft:#123840;
+  --ok:#55C28D; --ok-soft:#163626; --warn:#E3A43A; --warn-soft:#3A2D14; --crit:#EF6A60; --crit-soft:#41201E; --info:#6C9BE0; --info-soft:#18263C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D161A; --surface:#142026; --surface-2:#1B2A31; --fg:#E1EBEE; --muted:#90A4AC; --line:#293B43;
+  --accent:#43B4C4; --accent-ink:#04232A; --accent-soft:#123840;
+  --ok:#55C28D; --ok-soft:#163626; --warn:#E3A43A; --warn-soft:#3A2D14; --crit:#EF6A60; --crit-soft:#41201E; --info:#6C9BE0; --info-soft:#18263C; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.15;text-wrap:balance}
+a{color:var(--accent)}
+.mono{font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+.muted{color:var(--muted)}
+
+.top{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{display:flex;align-items:center;gap:8px 16px;padding:10px 16px;max-width:1100px;margin:0 auto}
+.brand{margin-right:auto}
+.brand .row1{display:flex;align-items:baseline;gap:10px}
+.brand h1{font-size:22px;font-weight:700}
+.brand .tag{font-family:var(--f-mono);font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:1px 5px}
+.home{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;display:block;margin-bottom:2px}
+.gh{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:6px 12px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+.gh::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--line)}
+.gh.on::before{background:var(--ok)} .gh.bad::before{background:var(--crit)}
+
+main{max-width:1100px;margin:0 auto;padding:20px 16px 60px;display:grid;gap:16px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.step>header{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+.step>header .n{font-family:var(--f-mono);font-size:12px;color:var(--accent-ink);background:var(--accent);border-radius:50%;width:22px;height:22px;display:inline-grid;place-items:center;flex:none}
+.step>header h2{font-size:19px}
+.step>header p{margin:0 0 0 auto;color:var(--muted);font-size:13px;text-align:right}
+.step.off{opacity:.6}
+.step.off>header .n{background:var(--muted)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 16px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.field input,.field select{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:7px 10px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.seg label{padding:7px 14px;cursor:pointer;font-weight:600;color:var(--muted);border-right:1px solid var(--line)}
+.seg label:last-child{border-right:0}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--accent);color:var(--accent-ink)}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:-2px}
+.qtps{display:grid;gap:6px;margin-top:6px}
+.qtp{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;cursor:pointer}
+.qtp:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.qtp input{margin-top:4px;width:auto;flex:none}
+.qtp b{font-family:var(--f-mono);font-size:12px}
+.chip{font-size:11px;padding:1px 6px;border-radius:3px;background:var(--surface-2);font-family:var(--f-mono);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.crit{background:var(--crit-soft);color:var(--crit)}
+
+table.kv{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
+table.kv th{text-align:left;font-weight:600;color:var(--muted);width:200px;padding:5px 10px 5px 0;vertical-align:top;font-size:13px}
+table.kv td{padding:5px 0;border-bottom:1px solid var(--line)}
+table.kv tr.sub th{padding-top:14px;color:var(--fg);font-family:var(--f-display);font-size:15px}
+table.kv tr.sub td{border-bottom:0}
+
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:7px 14px;font-weight:600;cursor:pointer;text-decoration:none;color:inherit}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:4px 10px;font-size:13px}
+
+.drop{border:2px dashed var(--line);border-radius:10px;padding:26px 16px;text-align:center;background:var(--bg)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop p{margin:6px 0}
+.drop .acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.sum{display:flex;gap:6px 14px;flex-wrap:wrap;margin:14px 0 8px;font-size:13px;color:var(--muted)}
+.sum b{color:var(--fg)}
+.tree{border:1px solid var(--line);border-radius:var(--r);max-height:440px;overflow:auto;font-size:14px}
+.tree .row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:5px 10px;border-bottom:1px solid var(--line);cursor:pointer}
+.tree .row:last-child{border-bottom:0}
+.tree .row:hover{background:var(--surface-2)}
+.tree .row.dir{cursor:default;font-weight:600;background:var(--surface-2)}
+.tree .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree .ico{display:inline-block;width:38px;font-family:var(--f-mono);font-size:10px;color:var(--muted)}
+.tree .row.sel{outline:2px solid var(--accent);outline-offset:-2px}
+.preview{margin-top:12px;border:1px solid var(--line);border-radius:var(--r);padding:12px;background:var(--bg)}
+.preview pre{white-space:pre-wrap;font-family:var(--f-mono);font-size:12px;max-height:340px;overflow:auto;margin:8px 0 0}
+.preview img{max-width:100%;max-height:420px;display:block;margin-top:8px;border-radius:4px}
+
+.issues{display:grid;gap:8px}
+.issue{border:1px solid var(--line);border-left:4px solid var(--info);border-radius:var(--r);padding:9px 12px;background:var(--surface)}
+.issue.crit{border-left-color:var(--crit)} .issue.warn{border-left-color:var(--warn)} .issue.ok{border-left-color:var(--ok)}
+.issue b{display:block}
+.issue .fix{color:var(--muted);font-size:14px;margin-top:2px}
+.issue .fix::before{content:"Fix: ";font-weight:600;color:var(--fg)}
+.banner{border:1px solid var(--line);background:var(--surface);border-left:4px solid var(--warn);border-radius:var(--r);padding:10px 14px}
+.empty{color:var(--muted);font-size:14px;margin:0}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:var(--r);z-index:50;max-width:calc(100% - 32px)}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);padding:0;width:min(520px,calc(100% - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+.dlg-h,.dlg-f{display:flex;align-items:center;gap:8px;padding:14px 18px}
+.dlg-h{border-bottom:1px solid var(--line)} .dlg-f{border-top:1px solid var(--line);justify-content:flex-end}
+.dlg-body{padding:14px 18px} .dlg-body ol{padding-left:18px}
+.form-err{color:var(--crit);font-size:14px;margin-top:8px}
+@media (max-width:640px){.step>header{flex-wrap:wrap}.step>header p{margin:0;text-align:left;width:100%} table.kv th{width:120px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div class="brand"><a class="home" href="../">← New projects</a><div class="row1"><h1>Test Reports</h1><span class="tag">PREVIEW</span></div></div>
+  <button class="gh" id="btn-gh" type="button"><span>Connect GitHub</span></button>
+</div></header>
+
+<main>
+  <div class="banner" id="banner"><b>Work in progress.</b> Steps 1 and 2 work: they read the test from Control de ensayos and check the data you add. The AI draft (step 3) and the final PDF (step 4) will be connected once the report templates are in.</div>
+
+  <section class="step" id="s1">
+    <header><span class="n">1</span><h2>Request</h2><p>The test details come from Control de ensayos.</p></header>
+    <div class="grid">
+      <div class="field"><label for="plr">PLR number</label><input id="plr" list="plr-list" placeholder="PLR003127" autocomplete="off" spellcheck="false"></div>
+      <div class="field"><label>Report template</label>
+        <div class="seg" role="radiogroup" aria-label="Report template">
+          <label><input type="radio" name="tpl" value="simple" checked>Simple</label>
+          <label><input type="radio" name="tpl" value="complex">Complex</label>
+        </div></div>
+    </div>
+    <div id="qtp-box"></div>
+    <div id="test-info"></div>
+  </section>
+
+  <section class="step" id="s2">
+    <header><span class="n">2</span><h2>Test data</h2><p>Drop the whole test folder. Files are read in this browser.</p></header>
+    <div class="drop" id="drop">
+      <p><b>Drag the test folder here</b>, with all its subfolders</p>
+      <p class="muted">Excel, Word, PDF, photos, CSV and text files</p>
+      <div class="acts">
+        <button class="btn" type="button" id="pick-dir">Choose folder…</button>
+        <button class="btn" type="button" id="pick-files">Add files…</button>
+        <button class="btn" type="button" id="clear" hidden>Remove all</button>
+      </div>
+      <input type="file" id="in-dir" webkitdirectory multiple hidden>
+      <input type="file" id="in-files" multiple hidden>
+    </div>
+    <div id="files"></div>
+  </section>
+
+  <section class="step" id="s3">
+    <header><span class="n">3</span><h2>Preliminary review</h2><p>Problems found and how to fix them.</p></header>
+    <div id="review"></div>
+  </section>
+
+  <section class="step off" id="s4">
+    <header><span class="n">4</span><h2>Final report</h2><p>PDF on screen, ready to download.</p></header>
+    <p class="empty">Available once the AI draft is connected and every problem in step 3 is solved.</p>
+  </section>
+</main>
+<dialog id="dlg"></dialog>
+<datalist id="plr-list"></datalist>
+<div id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg){const t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,4200)}
+const fmtSize=b=>b<1024?b+' B':b<1048576?(b/1024).toFixed(0)+' KB':(b/1048576).toFixed(1)+' MB';
+const fmtDate=d=>d?new Date(d+(d.length===10?'T00:00':'')).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'';
+
+/* ---------- Test data from Control de ensayos (read only) ----------
+   Polinya-LAB/lab-data/ensayos/ensayos.json is private, so it is read with the GitHub key shared by the lab apps (same site,
+   same browser storage). This page never writes to it. */
+const REPO={owner:'Polinya-LAB',repo:'lab-data',branch:'main',path:'ensayos/ensayos.json'};
+const API=`https://api.github.com/repos/${REPO.owner}/${REPO.repo}`;
+const TOKEN_KEY='pd-gh-token';
+const GH={token:'',login:null,invalid:false};
+try{GH.token=localStorage.getItem(TOKEN_KEY)||'';}catch(e){}
+let DB=null, dbErr=null;
+const b64decode=b=>new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+const ghFetch=url=>fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json',...(GH.token?{Authorization:`Bearer ${GH.token}`}:{})}});
+async function loadDb(){
+  dbErr=null;
+  if(!GH.token){dbErr='nokey'; return render();}
+  try{
+    const res=await ghFetch(`${API}/contents/${REPO.path}?ref=${REPO.branch}`);
+    if(res.status===401){GH.invalid=true; dbErr='auth'; return render();}
+    if(!res.ok){dbErr=res.status===404||res.status===403?'forbidden':'unavailable'; return render();}
+    const j=await res.json(); let text;
+    if(j.content) text=b64decode(j.content);
+    else{const blob=await ghFetch(`${API}/git/blobs/${j.sha}`); text=b64decode((await blob.json()).content);}
+    DB=JSON.parse(text);
+    const plrs=[...new Set(Object.values(DB.tests||{}).map(t=>t.plr).filter(Boolean))].sort().reverse();
+    $('#plr-list').innerHTML=plrs.map(p=>`<option value="${esc(p)}">`).join('');
+    fetch('https://api.github.com/user',{headers:{Authorization:`Bearer ${GH.token}`}}).then(r=>r.ok?r.json():null).then(u=>{if(u){GH.login=u.login; renderGh();}});
+  }catch(e){dbErr='unavailable';}
+  render();
+}
+function renderGh(){
+  const b=$('#btn-gh');
+  b.className='gh '+(GH.invalid?'bad':DB?'on':'');
+  b.querySelector('span').textContent=GH.invalid?'GitHub key expired':GH.login||(GH.token&&DB?'Connected':'Connect GitHub');
+}
+function openGh(){
+  const dlg=$('#dlg');
+  dlg.innerHTML=`<form id="gh-form"><header class="dlg-h"><div><p class="eyebrow">Access</p><h2>Connect GitHub</h2></div></header>
+  <div class="dlg-body">${GH.login?`<p>Connected as <b>${esc(GH.login)}</b>.</p>`:''}
+  <ol><li>Create an access key in GitHub: <a href="https://github.com/settings/tokens/new?scopes=repo&amp;description=Laboratorio%20Polinya" target="_blank" rel="noopener">open the form</a>, choose an expiry and press <i>Generate token</i>. If you already use Control de ensayos in this browser, you are already connected.</li><li>Paste the key here.</li></ol>
+  <div class="field"><label for="gh-token">Access key (token)</label><input id="gh-token" type="password" placeholder="ghp_…" autocomplete="off"></div>
+  <p class="muted" style="font-size:13px">The key stays in this browser and is shared with the other lab apps. This page only reads the test list from <span class="mono">${REPO.owner}/${REPO.repo}</span>.</p>
+  <div class="form-err" id="gh-err" hidden></div></div>
+  <footer class="dlg-f"><button type="button" class="btn" id="gh-cancel">Cancel</button><button class="btn primary" type="submit">Connect</button></footer></form>`;
+  dlg.showModal();
+  $('#gh-cancel').onclick=()=>dlg.close();
+  $('#gh-form').onsubmit=async e=>{e.preventDefault();
+    const t=$('#gh-token').value.trim(); if(!t) return;
+    GH.token=t; GH.invalid=false; GH.login=null; await loadDb();
+    if(DB){try{localStorage.setItem(TOKEN_KEY,t);}catch(e){} dlg.close(); toast('Connected. The test list is loaded.');}
+    else{const er=$('#gh-err'); er.hidden=false; er.textContent=dbErr==='auth'?'That key is not valid or has expired.':dbErr==='forbidden'?'That key cannot see the lab data repository.':'Could not reach GitHub. Check your connection.';}
+  };
+}
+
+/* ---------- Request ---------- */
+const REQ={plr:'',qtps:new Set(),tpl:'simple'};
+const testsOf=plr=>Object.values((DB&&DB.tests)||{}).filter(t=>t.plr===plr).sort((a,b)=>(a.sequence||0)-(b.sequence||0)||String(a.qtp).localeCompare(b.qtp));
+const chosenTests=()=>testsOf(REQ.plr).filter(t=>REQ.qtps.has(t.qtp));
+const person=id=>((DB.personas||{})[id]||{}).nombre;
+const bench=id=>((DB.bancos||{})[id]||{}).nombre;
+const qtpName=c=>((DB.qtps||{})[c]||{}).name;
+const statusChip=t=>`<span class="chip ${t.status==='Completed'||t.status==='Report'?'ok':/hold|Cancel|Not approved/.test(t.status)?'crit':'warn'}">${esc(t.status||'—')}</span>`;
+function setPlr(v){
+  v=v.trim().toUpperCase(); if(/^\d+$/.test(v)) v='PLR'+v.padStart(6,'0');
+  if(v===REQ.plr) return; REQ.plr=v;
+  const ts=testsOf(v); REQ.qtps=new Set(ts.length===1?[ts[0].qtp]:ts.filter(t=>t.status!=='Cancelled').map(t=>t.qtp));
+  render();
+}
+function renderRequest(){
+  const box=$('#qtp-box'), info=$('#test-info');
+  if(!DB){box.innerHTML=`<p class="empty" style="margin-top:12px">${dbErr==='nokey'||dbErr==='auth'?'<a href="#" data-act="gh">Connect GitHub</a> to load the tests from Control de ensayos.':dbErr?'Could not load the tests from Control de ensayos. <a href="#" data-act="gh">Check the GitHub key</a>.':'Loading tests…'}</p>`; info.innerHTML=''; return;}
+  if(!REQ.plr){box.innerHTML=''; info.innerHTML=''; return;}
+  const ts=testsOf(REQ.plr);
+  if(!ts.length){box.innerHTML=`<p class="empty" style="margin-top:12px">${esc(REQ.plr)} is not in Control de ensayos.</p>`; info.innerHTML=''; return;}
+  box.innerHTML=`<div class="field" style="margin-top:14px"><label>QTP used (one or more)</label><div class="qtps">${ts.map(t=>`
+    <label class="qtp"><input type="checkbox" value="${esc(t.qtp)}" ${REQ.qtps.has(t.qtp)?'checked':''}>
+    <span><b>${esc(t.qtp)}</b> ${esc(t.title||qtpName(t.qtp)||'')} ${statusChip(t)} ${t.result&&t.result!=='N/A'?`<span class="chip ${t.result==='Pass'?'ok':'crit'}">${esc(t.result)}</span>`:''}</span></label>`).join('')}</div></div>`;
+  const sel=chosenTests();
+  if(!sel.length){info.innerHTML=''; return;}
+  const f=sel[0], row=(k,v)=>v===''||v==null?'':`<tr><th>${k}</th><td>${v}</td></tr>`;
+  info.innerHTML=`<table class="kv"><tbody>
+    ${row('Project',esc(f.project))}${row('Requester',esc(f.requester))}${row('Product category',esc(f.category))}
+    ${sel.map(t=>`<tr class="sub"><th colspan="2">${esc(t.qtp)} · ${esc(t.title||qtpName(t.qtp)||'')}</th></tr>
+      ${row('Status',statusChip(t)+(t.progress!==''&&t.progress!=null&&t.status!=='Completed'?` <span class="muted">${esc(t.progress)}%</span>`:''))}
+      ${row('Result',esc(t.result))}
+      ${row('Technician',esc(person(t.techId)||t.arasTech))}
+      ${row('Equipment',esc(bench(t.equipmentId)||t.arasEquipment))}
+      ${row('Samples',esc(t.pieces))}
+      ${row('Duration',t.durVal||t.arasDurVal?esc(`${t.durVal||t.arasDurVal} ${t.durUnit||t.arasDurUnit||''}`):'')}
+      ${row('Dates',[fmtDate(t.start),fmtDate(t.end||t.closedAt)].filter(Boolean).map(esc).join(' → '))}
+      ${row('Comments',esc([t.comments,t.labNotes].filter(Boolean).join(' · ')))}`).join('')}
+  </tbody></table>`;
+}
+
+/* ---------- Test data: folders with subfolders, read in the browser ----------
+   Every file keeps its path inside the dropped folder. The text is extracted now (Excel with SheetJS, Word with mammoth,
+   PDF with pdf.js) so the problems can be checked before anything is sent to the AI. */
+const FILES=[]; let selFile=null;
+const KIND=[['excel',/\.(xlsx|xlsm|xls|ods)$/i],['csv',/\.(csv|tsv)$/i],['word',/\.docx$/i],['oldword',/\.(doc|rtf)$/i],['pdf',/\.pdf$/i],['image',/\.(jpe?g|png|gif|webp|bmp)$/i],['heic',/\.(heic|heif|tiff?)$/i],['text',/\.(txt|json|xml|log)$/i],['video',/\.(mp4|mov|avi|wmv)$/i],['junk',/(^|\/)(thumbs\.db|\.ds_store|desktop\.ini|~\$[^/]*)$/i]];
+const kindOf=n=>{for(const [k,re] of KIND) if(re.test(n)) return k; return 'other';};
+const ICON={excel:'XLS',csv:'CSV',word:'DOC',oldword:'DOC',pdf:'PDF',image:'IMG',heic:'IMG',text:'TXT',video:'VID',junk:'—',other:'?'};
+function addFiles(list){
+  let n=0;
+  for(const {file,path} of list){
+    const p=(path||file.name).replace(/^\/+/,'');
+    if(FILES.some(f=>f.path===p&&f.size===file.size)) continue;
+    const f={path:p,name:file.name,size:file.size,kind:kindOf(p),file,state:'pending',text:'',info:'',error:''};
+    if(f.kind==='junk') continue;
+    FILES.push(f); n++;
+  }
+  FILES.sort((a,b)=>a.path.localeCompare(b.path,undefined,{numeric:true}));
+  if(n) toast(`${n} file${n>1?'s':''} added.`);
+  render(); extractAll();
+}
+async function readEntry(entry,prefix,out){
+  if(entry.isFile){const file=await new Promise((res,rej)=>entry.file(res,rej)); out.push({file,path:prefix+file.name}); return;}
+  if(entry.isDirectory){
+    const reader=entry.createReader(); let batch;
+    do{batch=await new Promise((res,rej)=>reader.readEntries(res,rej)); for(const e of batch) await readEntry(e,prefix+entry.name+'/',out);}while(batch.length);
+  }
+}
+const drop=$('#drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault(); drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault(); drop.classList.remove('over');}));
+drop.addEventListener('drop',async e=>{
+  const out=[], entries=[...e.dataTransfer.items].map(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()).filter(Boolean);
+  if(entries.length) for(const en of entries) await readEntry(en,'',out);
+  else for(const file of e.dataTransfer.files) out.push({file,path:file.name});
+  addFiles(out);
+});
+$('#pick-dir').onclick=()=>$('#in-dir').click();
+$('#pick-files').onclick=()=>$('#in-files').click();
+$('#in-dir').onchange=e=>{addFiles([...e.target.files].map(file=>({file,path:file.webkitRelativePath||file.name}))); e.target.value='';};
+$('#in-files').onchange=e=>{addFiles([...e.target.files].map(file=>({file,path:file.name}))); e.target.value='';};
+$('#clear').onclick=()=>{FILES.forEach(f=>f.url&&URL.revokeObjectURL(f.url)); FILES.length=0; selFile=null; render();};
+
+const CDN='https://cdnjs.cloudflare.com/ajax/libs/';
+const scripts={};
+const loadScript=src=>scripts[src]||(scripts[src]=new Promise((res,rej)=>{const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>{delete scripts[src]; rej(new Error('a file reader could not load (no internet connection?)'));}; document.head.appendChild(s);}));
+async function pdfText(buf){
+  await loadScript(CDN+'pdf.js/3.11.174/pdf.min.js'); const lib=window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc=CDN+'pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf=await lib.getDocument({data:buf}).promise, pages=[];
+  for(let i=1;i<=pdf.numPages;i++){const c=await (await pdf.getPage(i)).getTextContent(); pages.push(c.items.map(t=>t.str+(t.hasEOL?'\n':' ')).join('').trim());}
+  return {pages:pdf.numPages,text:pages.map((p,i)=>`--- page ${i+1} ---\n${p}`).join('\n\n'),chars:pages.join('').replace(/\s/g,'').length};
+}
+async function extract(f){
+  f.state='reading';
+  try{
+    if(f.size===0) throw new Error('the file is empty');
+    if(f.kind==='excel'||f.kind==='csv'){
+      const wb=XLSX.read(await f.file.arrayBuffer(),{type:'array',cellDates:true});
+      const parts=[], sheets=[];
+      for(const name of wb.SheetNames){const ws=wb.Sheets[name], ref=ws['!ref']; if(!ref){sheets.push(`${name} (empty)`); continue;}
+        const r=XLSX.utils.decode_range(ref), rows=r.e.r-r.s.r+1, cols=r.e.c-r.s.c+1;
+        sheets.push(`${name} (${rows}×${cols})`); parts.push(`=== Sheet: ${name} ===\n`+XLSX.utils.sheet_to_csv(ws,{blankrows:false}));}
+      f.text=parts.join('\n\n'); f.info=`${wb.SheetNames.length} sheet${wb.SheetNames.length>1?'s':''}: ${sheets.join(', ')}`; f.sheets=wb.SheetNames.length;
+    }else if(f.kind==='word'){
+      await loadScript(CDN+'mammoth/1.6.0/mammoth.browser.min.js');
+      const r=await window.mammoth.extractRawText({arrayBuffer:await f.file.arrayBuffer()}); f.text=r.value.trim(); f.info=`${f.text.split(/\s+/).filter(Boolean).length} words`;
+    }else if(f.kind==='pdf'){
+      const r=await pdfText(await f.file.arrayBuffer()); f.text=r.text; f.pages=r.pages; f.scanned=r.chars<40*r.pages;
+      f.info=`${r.pages} page${r.pages>1?'s':''}${f.scanned?' · no text (scanned)':''}`;
+    }else if(f.kind==='image'){
+      f.url=URL.createObjectURL(f.file);
+      const img=await new Promise((res,rej)=>{const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('the image cannot be opened')); i.src=f.url;});
+      f.w=img.naturalWidth; f.h=img.naturalHeight; f.info=`${f.w}×${f.h} px`;
+    }else if(f.kind==='text'){
+      f.text=(await f.file.text()).trim(); f.info=`${f.text.length} characters`;
+    }
+    f.state='ok';
+  }catch(e){f.state='error'; f.error=e.message||String(e);}
+}
+let extracting=false;
+async function extractAll(){
+  if(extracting) return; extracting=true;
+  try{for(const f of FILES) if(f.state==='pending'){await extract(f); render();}}
+  finally{extracting=false;}
+}
+function renderFiles(){
+  $('#clear').hidden=!FILES.length;
+  const box=$('#files');
+  if(!FILES.length){box.innerHTML=''; return;}
+  const by={}; FILES.forEach(f=>by[f.kind]=(by[f.kind]||0)+1);
+  const total=FILES.reduce((s,f)=>s+f.size,0), reading=FILES.filter(f=>f.state==='pending'||f.state==='reading').length;
+  const label={excel:'Excel',csv:'CSV',word:'Word',oldword:'old Word',pdf:'PDF',image:'photos',heic:'HEIC/TIFF',text:'text',video:'video',other:'other'};
+  let html=`<div class="sum"><span><b>${FILES.length}</b> files · ${fmtSize(total)}</span>${Object.entries(by).map(([k,n])=>`<span><b>${n}</b> ${label[k]}</span>`).join('')}${reading?`<span>Reading ${reading}…</span>`:''}</div><div class="tree">`;
+  let lastDir=null;
+  for(const [i,f] of FILES.entries()){
+    const dir=f.path.includes('/')?f.path.slice(0,f.path.lastIndexOf('/')):'';
+    if(dir!==lastDir){if(dir) html+=`<div class="row dir"><span class="name">${esc(dir)}/</span><span></span><span></span></div>`; lastDir=dir;}
+    const st=f.state==='error'?`<span class="chip crit">${esc(f.error)}</span>`:f.state==='ok'?`<span class="muted mono">${esc(f.info)}</span>`:f.state==='reading'?'<span class="muted mono">reading…</span>':'';
+    html+=`<div class="row${selFile===i?' sel':''}" data-file="${i}" tabindex="0"><span class="name" style="padding-left:${dir?18:0}px"><span class="ico">${ICON[f.kind]}</span>${esc(f.name)}</span>${st}<span class="mono muted">${fmtSize(f.size)}</span></div>`;
+  }
+  html+='</div>';
+  const f=FILES[selFile];
+  if(f) html+=`<div class="preview"><div style="display:flex;gap:8px;align-items:baseline"><b>${esc(f.path)}</b><span class="sp" style="margin-left:auto"></span><button class="btn sm" data-act="close-prev">Close</button></div>
+    ${f.kind==='image'&&f.url?`<img src="${f.url}" alt="${esc(f.name)}">`:f.text?`<pre>${esc(f.text.slice(0,20000))}${f.text.length>20000?'\n…':''}</pre>`:`<p class="empty">${f.state==='error'?esc(f.error):'No text to show for this file.'}</p>`}</div>`;
+  box.innerHTML=html;
+}
+
+/* ---------- Preliminary review ----------
+   Checks that need no AI: what Control de ensayos says about the test and what is in the folder. The AI draft will add its own
+   findings (missing results, values out of specification, inconsistencies between files) to this same list. */
+function checks(){
+  const out=[], add=(sev,title,fix)=>out.push({sev,title,fix});
+  if(!REQ.plr) return [{sev:'info',title:'Enter the PLR number to start.'}];
+  const ts=chosenTests();
+  if(DB&&!testsOf(REQ.plr).length) add('crit',`${REQ.plr} is not in Control de ensayos.`,'Check the number, or import the latest ARAS export in Control de ensayos.');
+  if(DB&&testsOf(REQ.plr).length&&!ts.length) add('crit','No QTP selected.','Tick the QTP or QTPs this report covers.');
+  for(const t of ts){
+    const tag=`${t.qtp}:`;
+    if(t.status!=='Completed'&&t.status!=='Report') add('warn',`${tag} the test is "${t.status}" in Control de ensayos${t.progress!==''&&t.progress!=null?` (${t.progress}%)`:''}.`,'Finish the test first, or mark it as completed in Control de ensayos if it is already done.');
+    if(!t.result||t.result==='N/A') add('warn',`${tag} no result (Pass/Fail) is recorded.`,'Record the result in Control de ensayos, or the draft will propose it from the data for you to confirm.');
+    if(!person(t.techId)&&!t.arasTech) add('warn',`${tag} no technician is assigned.`,'Assign the technician in Control de ensayos so the report can name who did the test.');
+    if(!bench(t.equipmentId)&&!t.arasEquipment) add('warn',`${tag} no equipment is recorded.`,'Add the equipment in Control de ensayos; the report lists it with its calibration.');
+    if(!t.start) add('info',`${tag} no start date is recorded.`,'Add the dates in Control de ensayos, or they will be taken from the data files if they appear there.');
+  }
+  if(!FILES.length) add('crit','No test data added yet.','Drop the test folder in step 2.');
+  else{
+    if(!FILES.some(f=>f.kind==='image')) add('warn','There are no photos.','Add photos of the samples before and after the test, if there are any.');
+    if(!FILES.some(f=>['excel','csv','pdf','word','text'].includes(f.kind))) add('warn','There are no data files (Excel, PDF, Word…).','Add the measurement files or the data sheet of the test.');
+    const errs=FILES.filter(f=>f.state==='error'); if(errs.length) add('crit',`${errs.length} file${errs.length>1?'s':''} could not be read: ${errs.slice(0,4).map(f=>f.name).join(', ')}${errs.length>4?'…':''}.`,'Open them on your computer to check they are not damaged, save them again and add them again.');
+    const old=FILES.filter(f=>f.kind==='oldword'); if(old.length) add('warn',`${old.length} old Word file${old.length>1?'s':''} (.doc/.rtf) cannot be read: ${old.slice(0,3).map(f=>f.name).join(', ')}.`,'Open in Word and save as .docx, or as PDF.');
+    const heic=FILES.filter(f=>f.kind==='heic'); if(heic.length) add('warn',`${heic.length} photo${heic.length>1?'s':''} in HEIC or TIFF format cannot be shown in the report.`,'Convert them to JPG (on iPhone: Settings › Camera › Formats › Most Compatible).');
+    const other=FILES.filter(f=>f.kind==='other'||f.kind==='video'); if(other.length) add('info',`${other.length} file${other.length>1?'s':''} will not be used: ${other.slice(0,4).map(f=>f.name).join(', ')}${other.length>4?'…':''}.`,'Nothing to do if they are not needed. Videos and other formats are not read.');
+    const scanned=FILES.filter(f=>f.scanned); if(scanned.length) add('info',`${scanned.length} PDF${scanned.length>1?'s are':' is'} scanned (no text): ${scanned.slice(0,3).map(f=>f.name).join(', ')}.`,'The AI will read them as images; the original file gives better results if you have it.');
+    const big=FILES.filter(f=>f.kind==='image'&&f.w&&Math.max(f.w,f.h)>2400); if(big.length>5) add('info',`${big.length} photos are high resolution.`,'Nothing to do: they will be reduced automatically for the report.');
+    const dupes={}; FILES.forEach(f=>{const k=f.name.toLowerCase()+'|'+f.size; (dupes[k]=dupes[k]||[]).push(f.path);});
+    const dup=Object.values(dupes).filter(a=>a.length>1); if(dup.length) add('info',`${dup.length} file${dup.length>1?'s are':' is'} repeated in different folders (${dup[0].map(esc).join(' and ')}${dup.length>1?'…':''}).`,'Remove the copies so the data is not counted twice.');
+    const plrs=new Set(); FILES.forEach(f=>(f.path.toUpperCase().match(/PLR\s?0*\d{4,6}/g)||[]).forEach(m=>plrs.add('PLR'+m.replace(/\D/g,'').padStart(6,'0'))));
+    plrs.delete(REQ.plr); if(plrs.size) add('warn',`Some file names mention another request: ${[...plrs].join(', ')}.`,`Check that those files belong to ${REQ.plr} and remove them if not.`);
+    const qs=new Set(); FILES.forEach(f=>(f.path.toUpperCase().match(/QTP\s?\d{3,5}/g)||[]).forEach(m=>qs.add('QTP'+m.replace(/\D/g,'').padStart(4,'0'))));
+    const other_q=[...qs].filter(q=>!REQ.qtps.has(q)); if(other_q.length&&ts.length) add('warn',`Some file names mention a QTP not selected: ${other_q.join(', ')}.`,'Tick that QTP in step 1 if this report covers it, or remove those files.');
+  }
+  /* Template advice. Provisional rule until the current reports have been reviewed: the simple template fits one test with a
+     clear result and little data; several tests, many files or Excel books with several sheets need the complex one. */
+  if(ts.length&&FILES.length){
+    const sheets=FILES.reduce((s,f)=>s+(f.sheets||0),0), dataFiles=FILES.filter(f=>['excel','csv','pdf','word','text'].includes(f.kind)).length;
+    const simpleFits=ts.length===1&&dataFiles<=6&&sheets<=4;
+    if(REQ.tpl==='complex'&&simpleFits) add('warn','The simple template would be enough for this report.',`It is one test (${ts[0].qtp}) with ${dataFiles} data file${dataFiles!==1?'s':''}. Choose "Simple" in step 1, or keep "Complex" if the client asked for it.`);
+    if(REQ.tpl==='simple'&&!simpleFits) add('info','This report may not fit the simple template.',`It has ${ts.length} test${ts.length>1?'s':''} and ${dataFiles} data files. Consider "Complex" in step 1.`);
+  }
+  return out;
+}
+function renderReview(){
+  const list=checks(), order={crit:0,warn:1,info:2,ok:3}; list.sort((a,b)=>order[a.sev]-order[b.sev]);
+  const n=s=>list.filter(i=>i.sev===s).length;
+  const head=REQ.plr&&FILES.length?`<div class="sum"><span><b>${n('crit')}</b> to solve</span><span><b>${n('warn')}</b> to check</span><span><b>${n('info')}</b> notes</span></div>`:'';
+  $('#review').innerHTML=head+(list.length?`<div class="issues">${list.map(i=>`<div class="issue ${i.sev}"><b>${esc(i.title)}</b>${i.fix?`<div class="fix">${esc(i.fix)}</div>`:''}</div>`).join('')}</div>`:'<div class="issue ok"><b>No problems found in the data.</b><div class="muted">The AI review of the content will be added here.</div></div>')
+    +`<p class="empty" style="margin-top:12px">Next: the AI will draft the report in English with the chosen template and add what it finds in the content to this list.</p>`;
+}
+
+function render(){renderGh(); renderRequest(); renderFiles(); renderReview();}
+
+/* ---------- Events ---------- */
+$('#plr').addEventListener('change',e=>setPlr(e.target.value));
+$('#plr').addEventListener('input',e=>{const v=e.target.value.trim().toUpperCase(); if(/^PLR\d{6}$/.test(v)) setPlr(v);});
+document.querySelectorAll('input[name="tpl"]').forEach(r=>r.addEventListener('change',e=>{REQ.tpl=e.target.value; renderReview();}));
+document.addEventListener('change',e=>{if(e.target.closest('#qtp-box')&&e.target.type==='checkbox'){e.target.checked?REQ.qtps.add(e.target.value):REQ.qtps.delete(e.target.value); render();}});
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-act]'); if(a){e.preventDefault(); if(a.dataset.act==='gh') openGh(); if(a.dataset.act==='close-prev'){selFile=null; renderFiles();} return;}
+  const r=e.target.closest('[data-file]'); if(r){const i=+r.dataset.file; selFile=selFile===i?null:i; renderFiles();}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest&&e.target.closest('[data-file]'); if(r) r.click();}});
+$('#btn-gh').onclick=openGh;
+const q=new URLSearchParams(location.search).get('plr'); if(q){$('#plr').value=q;}
+render(); loadDb().then(()=>{if(q) setPlr(q);});
+</script>
+</body>
+</html>
