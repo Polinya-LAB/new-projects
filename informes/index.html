@@ -784,7 +784,7 @@ function renderAi(){
 const JSD='https://cdn.jsdelivr.net/npm/';
 const NAVY='#001A70', BAR='#C6D9F1', HEAD='#B8CCE4', HCOL='#17365D', LINE='#153D63', PASS_FILL='#66FF33', FAIL_FILL='#FF6B6B';
 const SERIES=['#001A70','#C0504D','#2D7F55','#E3A43A','#3866AE','#7F4FA0','#0A6C7C','#8C564B'];
-const PDF={timer:null,gen:0,url:'',busy:false,error:'',final:false,logo:undefined,charts:new Map()};
+const PDF={timer:null,gen:0,url:'',busy:false,error:'',final:false,word:false,logo:undefined,charts:new Map()};
 const getP=(o,p)=>p.split('.').reduce((a,k)=>a==null?a:a[k],o);
 function setP(o,p,v){const ks=p.split('.'), last=ks.pop(); const t=ks.reduce((a,k)=>a[k],o); if(t) t[last]=v;}
 
@@ -982,6 +982,149 @@ async function docDef(final){
       index:{fontSize:16,color:'#2F5496',alignment:'right',margin:[0,0,0,16]},simpleH:{bold:true,fontSize:12,alignment:'center',decoration:'underline',margin:[0,0,0,14]}},
     content};
 }
+/* ---------- Word version ----------
+   The same report as the PDF, built with docx in this browser: same header on every page, Test Summary table, sections,
+   tables, charts and photos. The index of the complex template is a Word field: Word fills it when the file is opened. */
+const tw=pt=>Math.round(pt*20), hp=pt=>Math.round(pt*2), hex=c=>c.replace('#','');
+function wRuns(s,o={}){
+  return String(s??'').split(/(\[MISSING:[^\]]*\])/).filter(Boolean).map(p=>new docx.TextRun({text:p,...o,...(p.startsWith('[MISSING:')?{highlight:'yellow',color:'B8322B'}:{})}));
+}
+function wParas(t,o={}){
+  const out=[], size=hp(o.size||9.5), blocks=String(t||'').replace(/\r/g,'').trim().split(/\n[ \t]*\n/).filter(b=>b.trim());
+  blocks.forEach((b,bi)=>{const lines=b.split('\n');
+    lines.forEach((l,li)=>{const m=/^\s*[-•*]\s+(.*)$/.exec(l), last=li===lines.length-1&&bi<blocks.length-1;
+      out.push(new docx.Paragraph({children:wRuns(m?m[1]:l,{size}),...(m?{bullet:{level:0}}:{}),alignment:o.align,spacing:{after:last?120:0,line:276}}));});});
+  return out.length?out:[new docx.Paragraph({children:[new docx.TextRun({text:'',size})]})];
+}
+const wBorder=(pt=0.5,c='#000000')=>{const b={style:docx.BorderStyle.SINGLE,size:Math.max(2,Math.round(pt*8)),color:hex(c)}; return {top:b,bottom:b,left:b,right:b,insideHorizontal:b,insideVertical:b};};
+const wCell=(children,o={})=>new docx.TableCell({children:Array.isArray(children)?children:[children],verticalAlign:docx.VerticalAlign.CENTER,
+  margins:{top:40,bottom:40,left:70,right:70},...(o.fill?{shading:{fill:hex(o.fill),type:docx.ShadingType.CLEAR,color:'auto'}}:{}),
+  ...(o.span?{columnSpan:o.span}:{}),...(o.rowSpan?{rowSpan:o.rowSpan}:{}),...(o.width?{width:{size:tw(o.width),type:docx.WidthType.DXA}}:{})});
+const wP=(text,o={})=>new docx.Paragraph({alignment:o.align,spacing:{before:o.before||0,after:o.after||0},keepNext:o.keepNext,pageBreakBefore:o.pageBreak,heading:o.heading,
+  children:typeof text==='string'?wRuns(text,{bold:o.bold,size:o.heading?undefined:hp(o.size||9.5),color:o.color&&hex(o.color),underline:o.underline?{}:undefined}):text});
+const W_CONTENT=540;   // Letter width minus the 36 pt margins, as in the PDF
+function wTable(rows,o={}){
+  const nc=Math.max(...rows.map(r=>r.length)), fs=o.fontSize||(nc<=4?9:nc<=7?8:nc<=11?7:nc<=16?6:5);
+  const widths=o.widths||Array(nc).fill(W_CONTENT/nc);
+  return new docx.Table({width:{size:tw(W_CONTENT),type:docx.WidthType.DXA},columnWidths:widths.map(tw),borders:wBorder(),
+    rows:rows.map((r,i)=>new docx.TableRow({tableHeader:i===0,cantSplit:true,children:Array.from({length:nc},(_,c)=>wCell(wP(String(r[c]??''),{align:docx.AlignmentType.CENTER,size:fs,bold:i===0}),{fill:i===0?HEAD:null,width:widths[c]}))}))});
+}
+async function wImage(dataUrl,maxW,maxH){
+  const img=await new Promise((res,rej)=>{const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=dataUrl;});
+  const k=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight), b=atob(dataUrl.split(',')[1]), data=new Uint8Array(b.length);
+  for(let i=0;i<b.length;i++) data[i]=b.charCodeAt(i);
+  return new docx.ImageRun({data,transformation:{width:Math.round(img.naturalWidth*k*4/3),height:Math.round(img.naturalHeight*k*4/3)}});   // points to pixels
+}
+function wCaption(kind,n,text,tpl){
+  if(tpl==='simple') return new docx.Paragraph({alignment:docx.AlignmentType.CENTER,spacing:{before:80,after:280},children:[new docx.TextRun({text:`${kind} ${n}.`,bold:true,underline:{},size:18}),...wRuns(' '+(text||''),{size:18})]});
+  return new docx.Paragraph({alignment:docx.AlignmentType.CENTER,spacing:kind==='Table'?{before:160,after:60}:{before:60,after:200},keepNext:kind==='Table',children:wRuns(`${kind} ${n}. ${text||''}`,{size:18})});
+}
+async function wBlocks(list,tpl,n){
+  const out=[];
+  for(const b of list||[]){
+    if(b.kind==='text'){out.push(...wParas(b.text)); continue;}
+    if(b.kind==='table'){
+      const rows=b.cells&&b.cells.length?b.cells:rangeCells(b), cap=wCaption('Table',++n.table,b.caption,tpl);
+      const t=rows?wTable(rows):wP(`[MISSING: data of "${b.caption}" (${b.file} › ${b.sheet} › ${b.range})]`);
+      out.push(...(tpl==='simple'?[t,cap]:[cap,t])); continue;
+    }
+    if(b.kind==='chart'){
+      const img=await chartImage(b);
+      out.push(img?new docx.Paragraph({alignment:docx.AlignmentType.CENTER,spacing:{before:160},keepNext:true,children:[await wImage(img,430,240)]}):wP(`[MISSING: data of the chart "${b.caption}"]`),wCaption('Figure',++n.figure,b.caption,tpl)); continue;
+    }
+    if(b.kind==='figure'){
+      const f=fileByPath(b.file), img=f&&f.kind==='image'&&f.url?await pdfPhoto(f):null;
+      out.push(img?new docx.Paragraph({alignment:docx.AlignmentType.CENTER,spacing:{before:160},keepNext:true,children:[await wImage(img,400,300)]}):wP(`[MISSING: photo ${b.file}]`),wCaption('Figure',++n.figure,b.caption,tpl));
+    }
+  }
+  return out;
+}
+async function wPictureGrid(pics,n){
+  const cells=[];
+  for(const p of pics){
+    const f=fileByPath(p.file), img=f&&f.kind==='image'&&f.url?await pdfPhoto(f):null, no=++n.picture;
+    cells.push(wCell([img?new docx.Paragraph({alignment:docx.AlignmentType.CENTER,spacing:{before:60,after:60},children:[await wImage(img,262,196)]}):wP(`[MISSING: photo ${p.file}]`,{align:docx.AlignmentType.CENTER}),
+      new docx.Table({width:{size:tw(W_CONTENT/2-8),type:docx.WidthType.DXA},columnWidths:[tw(W_CONTENT/2-8)],borders:wBorder(0,'#FFFFFF'),
+        rows:[new docx.TableRow({children:[wCell(wP(`Picture ${no}. ${p.caption||''}`,{align:docx.AlignmentType.CENTER,size:8.5}),{fill:BAR})]})]})],{width:W_CONTENT/2}));
+  }
+  if(cells.length%2) cells.push(wCell(wP(''),{width:W_CONTENT/2}));
+  const rows=[]; for(let i=0;i<cells.length;i+=2) rows.push(new docx.TableRow({cantSplit:true,children:[cells[i],cells[i+1]]}));
+  return new docx.Table({width:{size:tw(W_CONTENT),type:docx.WidthType.DXA},columnWidths:[tw(W_CONTENT/2),tw(W_CONTENT/2)],borders:wBorder(0.75,'#7F7F7F'),rows});
+}
+async function wHeader(tpl,final){
+  const logo=await logoData(), c=(t,w)=>wCell(wP(t||' ',{bold:true,size:8.5}),{width:w});
+  const t=new docx.Table({width:{size:tw(W_CONTENT),type:docx.WidthType.DXA},columnWidths:[232,180,128].map(tw),borders:wBorder(0.75,LINE),rows:[
+    new docx.TableRow({children:[wCell(logo?new docx.Paragraph({alignment:docx.AlignmentType.CENTER,children:[await wImage(logo,190,44)]}):wP('FLUIDRA',{bold:true,size:20,color:NAVY,align:docx.AlignmentType.CENTER}),{rowSpan:2,width:232}),c(META.number,180),c(REQ.plr,128)]}),
+    new docx.TableRow({children:[c('Author: '+META.author,180),c('Date: '+META.date,128)]}),
+    new docx.TableRow({children:[wCell(wP('Qualification Test Results',{bold:true,size:15,color:'#FFFFFF',align:docx.AlignmentType.CENTER}),{fill:NAVY,width:232}),c((tpl==='simple'?'Title: ':'')+META.title,180),c(META.project,128)]})]});
+  return new docx.Header({children:[t,...(final?[]:[wP('DRAFT',{bold:true,size:14,color:'#B8322B',align:docx.AlignmentType.RIGHT,before:60})])]});
+}
+function wSummary(d){
+  const s=d.summary, full=(ch,o={})=>new docx.TableRow({children:[wCell(ch,{...o,span:2,width:W_CONTENT})]});
+  const bar=t=>wP(t,{bold:true,size:10.5}), acc=s.acceptance.length?s.acceptance:[{criterion:'[MISSING: acceptance criteria]',result:'N/A'}];
+  return new docx.Table({width:{size:tw(W_CONTENT),type:docx.WidthType.DXA},columnWidths:[tw(W_CONTENT-112),tw(112)],borders:wBorder(0.75,LINE),rows:[
+    full(wP('Test Summary',{bold:true,size:11,color:'#FFFFFF',align:docx.AlignmentType.CENTER}),{fill:NAVY}),
+    full(bar('Test Description'),{fill:BAR}), full(wParas(s.test_description)),
+    full(bar('Test Sample Information'),{fill:BAR}), full(wParas(s.sample_information)),
+    full(bar('QTP Deviations'),{fill:BAR}), full(wParas(s.qtp_deviations)),
+    new docx.TableRow({children:[wCell(bar('Acceptance Criteria'),{fill:BAR,width:W_CONTENT-112}),wCell(wP('Pass / Fail',{bold:true,size:10.5,align:docx.AlignmentType.CENTER}),{fill:BAR,width:112})]}),
+    ...acc.map(a=>new docx.TableRow({children:[wCell(wParas(a.criterion),{width:W_CONTENT-112}),wCell(wP(a.result,{bold:true,size:11,align:docx.AlignmentType.CENTER}),{width:112,fill:a.result==='PASS'?PASS_FILL:a.result==='FAIL'?FAIL_FILL:null})]})),
+    full(bar('Test Results Summary'),{fill:BAR}), full(wParas(s.results_summary))]});
+}
+async function wComplex(d,n){
+  let sec=0, sub=0;
+  const h1=(t,o={})=>{sec++; sub=0; return wP(`${sec}.  ${t}`,{heading:docx.HeadingLevel.HEADING_1,pageBreak:o.pageBreak,keepNext:true});};
+  const h2=t=>wP(`${sec}.${++sub}  ${t}`,{heading:docx.HeadingLevel.HEADING_2,keepNext:true});
+  const out=[wP('Index',{size:16,color:'#2F5496',align:docx.AlignmentType.RIGHT,pageBreak:true,after:320}),new docx.TableOfContents('Index',{hyperlink:true,headingStyleRange:'1-2'})];
+  out.push(h1('TEST DESCRIPTION',{pageBreak:true}),h2('SAMPLES DESCRIPTION'),wCaption('Table',++n.table,'Tested samples','complex'));
+  out.push(d.samples.length?wTable([['S/N','P/N','PROJECT PHASE','Nº DRAWING /REV','DESCRIPTION','RECEPTION DATE'],...d.samples.map(s=>[s.sn,s.pn,s.phase,s.drawing_rev,s.description,s.reception_date])],{fontSize:8.5}):wP('[MISSING: tested samples]'));
+  if(d.standards.trim()) out.push(h2('STANDARDS'),...wParas(d.standards));
+  out.push(h2('EXECUTION DESCRIPTION'),...wParas(d.execution_description),...await wBlocks(d.execution_blocks,'complex',n));
+  out.push(h2('MEASUREMENTS INSTRUMENTS AND ENVIRONMENTAL CONDITIONS'),wCaption('Table',++n.table,'Measurements instruments','complex'));
+  const iw=(W_CONTENT-92)/5;
+  out.push(d.instruments.length?wTable([['INSTRUMENT','CHARACTERISTIC OF CONTROL','MODEL / INVENTORY CODE','MANUFACTURER','CAPACITY RANGE & UNITS OF MEASUREMENT','LAST REVISION','NEXT REVISION'],
+    ...d.instruments.map(i=>[i.instrument,i.characteristic,i.model_code,i.manufacturer,i.range,i.last_revision,i.next_revision])],{fontSize:7.5,widths:[iw,iw,iw,iw,iw,46,46]}):wP('[MISSING: measurement instruments]'));
+  out.push(wCaption('Table',++n.table,'Conditions','complex'),new docx.Table({alignment:docx.AlignmentType.CENTER,width:{size:tw(200),type:docx.WidthType.DXA},columnWidths:[tw(110),tw(90)],borders:wBorder(),rows:[
+    new docx.TableRow({children:[wCell(wP('ENVIRONMENTAL CONDITIONS',{bold:true,size:8.5,align:docx.AlignmentType.CENTER}),{fill:HEAD,span:2,width:200})]}),
+    new docx.TableRow({children:[wCell(wP('Temperature',{size:8.5}),{width:110}),wCell(wP(d.environment.temperature||'N/A',{size:8.5,align:docx.AlignmentType.CENTER}),{width:90})]}),
+    new docx.TableRow({children:[wCell(wP('Humidity',{size:8.5}),{width:110}),wCell(wP(d.environment.humidity||'N/A',{size:8.5,align:docx.AlignmentType.CENTER}),{width:90})]})]}));
+  out.push(h1('RESULTS'),...await wBlocks(d.results,'complex',n));
+  out.push(h1('CONCLUSION'),...wParas(d.conclusion));
+  if(d.annexes.some(a=>a.pictures.length)){
+    out.push(h1('ANNEXES',{pageBreak:true}));
+    for(const a of d.annexes) if(a.pictures.length) out.push(h2(String(a.title||'').toUpperCase()),await wPictureGrid(a.pictures,n),wP('',{after:200}));
+  }
+  return out;
+}
+async function wordBlob(final){
+  await loadScript(JSD+'docx@8.5.0/build/index.umd.js');
+  const d=AI.draft, tpl=AI.tpl||REQ.tpl, n={table:0,figure:0,picture:0};
+  const simpleH=t=>wP(t,{bold:true,size:12,underline:true,align:docx.AlignmentType.CENTER,pageBreak:true,after:280});
+  const body=tpl==='complex'?await wComplex(d,n):[simpleH('Test Results Details'),...await wBlocks(d.results,'simple',n),simpleH('Conclusions'),...wParas(d.conclusion)];
+  const doc=new docx.Document({creator:META.author||'Laboratorio Polinyà',title:`${META.number} ${META.title}`,subject:'Qualification Test Results',
+    features:{updateFields:tpl==='complex'},
+    styles:{default:{document:{run:{font:'Arial',size:19}}},
+      paragraphStyles:[{id:'Heading1',name:'Heading 1',basedOn:'Normal',next:'Normal',quickFormat:true,run:{font:'Arial',bold:true,size:21,color:hex(HCOL)},paragraph:{spacing:{before:280,after:120}}},
+        {id:'Heading2',name:'Heading 2',basedOn:'Normal',next:'Normal',quickFormat:true,run:{font:'Arial',bold:true,size:20,color:hex(HCOL)},paragraph:{spacing:{before:200,after:120},indent:{left:80}}}]},
+    sections:[{properties:{page:{size:{width:tw(612),height:tw(792)},margin:{top:tw(112),bottom:tw(44),left:tw(36),right:tw(36),header:tw(24),footer:tw(16)}}},
+      headers:{default:await wHeader(tpl,final)},
+      footers:{default:new docx.Footer({children:[new docx.Paragraph({alignment:docx.AlignmentType.CENTER,children:[new docx.TextRun({children:[docx.PageNumber.CURRENT],size:18})]})]})},
+      children:[wSummary(d),...body]}]});
+  return docx.Packer.toBlob(doc);
+}
+/* Saves a file made in this page. */
+function saveFile(blob,name){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),10000);
+}
+async function downloadWord(){
+  if(!AI.draft||PDF.word) return;
+  PDF.word=true; renderFinalBar();
+  try{const final=finalState().final; await saveFile(await wordBlob(final),pdfName(final).replace(/\.pdf$/,'.docx'));}
+  catch(e){console.error(e); toast('The Word file could not be made: '+(e.message||e));}
+  finally{PDF.word=false; renderFinalBar();}
+}
+
 function schedulePdf(ms=1000){ clearTimeout(PDF.timer); if(AI.draft) PDF.timer=setTimeout(buildPdf,ms); }
 async function buildPdf(){
   const gen=++PDF.gen; PDF.busy=true; PDF.error=''; renderFinalBar();
@@ -1021,6 +1164,7 @@ function renderFinalBar(){
     <span>${s.final?'Everything is solved. This is the final report.':`To get the final report, solve ${list}.`}</span><span class="sp"></span>
     ${PDF.busy?'<span class="muted">Updating the PDF…</span>':''}${PDF.error?`<span class="chip crit">${esc(PDF.error)}</span>`:''}
     <button class="btn" data-act="finish" title="Forget the files, the draft and the PDF in this page">Clear all</button>
+    <button type="button" class="btn" data-act="word" ${AI.draft&&!PDF.word?'':'disabled'}>${PDF.word?'Preparing Word…':'Download Word'}${!PDF.word&&PDF.url&&!PDF.final?' (draft)':''}</button>
     <a class="btn primary" ${PDF.url?`href="${PDF.url}" download="${esc(pdfName(PDF.final))}"`:'aria-disabled="true"'}>Download PDF${PDF.url&&!PDF.final?' (draft)':''}</a>`;
   if(PDF.url&&!PDF.busy&&s.final!==PDF.final) schedulePdf(300);
 }
@@ -1148,7 +1292,7 @@ function chooseQtp(q){
 }
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]'); if(a){e.preventDefault(); if(a.dataset.act==='gh') openGh(); if(a.dataset.act==='close-prev'){selFile=null; renderFiles();}
-    if(a.dataset.act==='ai-signin') signIn(); if(a.dataset.act==='ai-draft') draftReport(); if(a.dataset.act==='ai-out') AI.client.auth.signOut(); if(a.dataset.act==='finish') clearAll(); if(a.dataset.act==='local-draft') prepareLocal(); if(a.dataset.act.startsWith('ed-')) editAction(a.dataset.act,a.dataset.arg); return;}
+    if(a.dataset.act==='ai-signin') signIn(); if(a.dataset.act==='ai-draft') draftReport(); if(a.dataset.act==='ai-out') AI.client.auth.signOut(); if(a.dataset.act==='finish') clearAll(); if(a.dataset.act==='word') downloadWord(); if(a.dataset.act==='local-draft') prepareLocal(); if(a.dataset.act.startsWith('ed-')) editAction(a.dataset.act,a.dataset.arg); return;}
   const r=e.target.closest('[data-file]'); if(r){const i=+r.dataset.file; selFile=selFile===i?null:i; renderFiles();}
 });
 document.addEventListener('input',e=>{
