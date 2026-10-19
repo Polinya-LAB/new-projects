@@ -64,7 +64,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px 60px;display:grid;gap:16px
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .seg label{padding:7px 14px;cursor:pointer;font-weight:600;color:var(--muted);border-right:1px solid var(--line)}
 .seg label:last-child{border-right:0}
-.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg input{position:absolute;opacity:0;pointer-events:none;width:1px!important;height:1px}
 .seg label:has(input:checked){background:var(--accent);color:var(--accent-ink)}
 .seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:-2px}
 .qtps{display:grid;gap:6px;margin-top:6px}
@@ -119,19 +119,35 @@ table.kv tr.sub td{border-bottom:0}
 .issue .src{font-family:var(--f-mono);font-size:11px;color:var(--muted);margin-top:2px}
 .issue .tag{font-family:var(--f-mono);font-size:10px;border:1px solid currentColor;border-radius:3px;padding:0 4px;margin-left:6px;color:var(--accent);font-weight:500}
 textarea.answers{width:100%;min-height:80px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 10px;margin-top:10px}
-.draft{border:1px solid var(--line);border-radius:var(--r);padding:20px 24px;background:#fff;color:#1a1a1a;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;margin-top:12px}
-.draft h3{font-family:Arial,Helvetica,sans-serif;font-size:20px;margin:0 0 4px}
-.draft h4{font-size:14px;margin:16px 0 4px;text-transform:uppercase;letter-spacing:.03em;color:#0A6C7C}
-.draft p{margin:4px 0;white-space:pre-wrap}
-.draft table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px}
-.draft th,.draft td{border:1px solid #bbb;padding:3px 6px;text-align:left}
-.draft th{background:#eef3f4}
-.draft .cap{font-size:11px;color:#555;margin-top:2px}
-.draft .figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-.draft .figs img{width:100%;border:1px solid #ccc}
-.draft .miss{background:#F7E8CC}
-.draft .res{display:inline-block;padding:2px 10px;border-radius:3px;font-weight:700;background:#eee}
-.draft .res.Pass{background:#D8EEE1;color:#2D7F55} .draft .res.Fail{background:#F6D9D6;color:#B8322B}
+.meta{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.meta .eyebrow{margin-bottom:8px}
+.issue.solved{opacity:.55} .issue.solved b{text-decoration:line-through}
+.issue .solve{float:right;margin-left:10px;font-size:12px;color:var(--muted);display:inline-flex;gap:5px;align-items:center;cursor:pointer;font-weight:600}
+.issue .solve input{width:auto;margin:0}
+.final-bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:12px}
+.final-bar .sp{flex:1}
+.final-bar a[aria-disabled]{opacity:.5;pointer-events:none}
+.final-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px;align-items:start}
+.pdf{width:100%;height:min(1040px,86vh);border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
+.editor{display:grid;gap:8px;max-height:min(1040px,86vh);overflow:auto;padding-right:4px;align-content:start}
+.editor details{border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
+.editor summary{padding:8px 12px;font-weight:600;cursor:pointer;font-family:var(--f-display);font-size:16px}
+.editor .in{padding:2px 12px 12px;display:grid;gap:10px}
+.ed{display:grid;gap:3px;min-width:0} .ed>span{font-size:12px;font-weight:600;color:var(--muted)}
+.ed textarea,.ed input,.ed select,.edt input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:6px 8px;font-size:14px;line-height:1.4}
+.ed textarea{resize:vertical;min-height:58px}
+.miss-f{border-color:var(--warn)!important;background:var(--warn-soft)!important}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.blk{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--surface);display:grid;gap:8px}
+.blk .src{font-family:var(--f-mono);font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.blk .thumb{max-width:100%;max-height:160px;border-radius:4px;justify-self:start}
+.edt{width:100%;border-collapse:collapse} .edt td{padding:1px} .edt input{padding:3px 5px;font-size:12px;min-width:60px}
+.blk:has(.edt){overflow-x:auto}
+.pics{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.pics figure{margin:0;display:grid;gap:4px} .pics img,.pics .nopic{width:100%;height:96px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.pics .nopic{display:grid;place-items:center;font-size:11px;color:var(--crit);background:var(--crit-soft);overflow:hidden;padding:4px;text-align:center}
+#chart-holder{position:absolute;left:-10000px;top:0;width:1400px;height:780px;overflow:hidden}
+@media (max-width:900px){.final-grid{grid-template-columns:1fr}.editor{max-height:none}.pdf{height:80vh}}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:var(--r);z-index:50;max-width:calc(100% - 32px)}
 dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);padding:0;width:min(520px,calc(100% - 32px))}
 dialog::backdrop{background:rgba(0,0,0,.35)}
@@ -149,7 +165,7 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 </div></header>
 
 <main>
-  <div class="banner" id="banner"><b>Work in progress.</b> Sign in with your Fluidra email to draft with AI. Step 4 shows the draft with a provisional layout until the lab templates are in.</div>
+  <div class="banner" id="banner"><b>Preview.</b> Sign in with your Fluidra email to draft with AI. The PDF follows the lab QTR templates; check every report before issuing it.</div>
 
   <section class="step" id="s1">
     <header><span class="n">1</span><h2>Request</h2><p>The test details come from Control de ensayos.</p></header>
@@ -163,10 +179,11 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
     </div>
     <div id="qtp-box"></div>
     <div id="test-info"></div>
+    <div id="meta" class="meta" hidden></div>
   </section>
 
   <section class="step" id="s2">
-    <header><span class="n">2</span><h2>Test data</h2><p>Drop the whole test folder. Files are read in this browser.</p></header>
+    <header><span class="n">2</span><h2>Test data</h2><p>Drop the whole test folder. Files stay in this page and are not stored.</p></header>
     <div class="drop" id="drop">
       <p><b>Drag the test folder here</b>, with all its subfolders</p>
       <p class="muted">Excel, Word, PDF, photos, CSV and text files</p>
@@ -188,13 +205,14 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
   </section>
 
   <section class="step off" id="s4">
-    <header><span class="n">4</span><h2>Final report</h2><p>PDF on screen, ready to download.</p></header>
-    <div id="final"><p class="empty">Available once the AI draft is connected and every problem in step 3 is solved.</p></div>
+    <header><span class="n">4</span><h2>Final report</h2><p>Edit the text and download the PDF.</p></header>
+    <div id="final"></div>
   </section>
 </main>
 <dialog id="dlg"></dialog>
 <datalist id="plr-list"></datalist>
 <div id="toast" hidden></div>
+<div id="chart-holder" aria-hidden="true"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -215,21 +233,23 @@ try{GH.token=localStorage.getItem(TOKEN_KEY)||'';}catch(e){}
 let DB=null, dbErr=null;
 const b64decode=b=>new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g,'')),c=>c.charCodeAt(0)));
 const ghFetch=url=>fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json',...(GH.token?{Authorization:`Bearer ${GH.token}`}:{})}});
+async function readJson(path){
+  const res=await ghFetch(`${API}/contents/${path}?ref=${REPO.branch}`);
+  if(!res.ok){const e=new Error(res.status===401?'auth':res.status===404||res.status===403?'forbidden':'unavailable'); throw e;}
+  const j=await res.json();
+  if(j.content) return JSON.parse(b64decode(j.content));
+  const blob=await ghFetch(`${API}/git/blobs/${j.sha}`); return JSON.parse(b64decode((await blob.json()).content));
+}
 async function loadDb(){
   dbErr=null;
   if(!GH.token){dbErr='nokey'; return render();}
   try{
-    const res=await ghFetch(`${API}/contents/${REPO.path}?ref=${REPO.branch}`);
-    if(res.status===401){GH.invalid=true; dbErr='auth'; return render();}
-    if(!res.ok){dbErr=res.status===404||res.status===403?'forbidden':'unavailable'; return render();}
-    const j=await res.json(); let text;
-    if(j.content) text=b64decode(j.content);
-    else{const blob=await ghFetch(`${API}/git/blobs/${j.sha}`); text=b64decode((await blob.json()).content);}
-    DB=JSON.parse(text);
+    DB=await readJson(REPO.path);
     const plrs=[...new Set(Object.values(DB.tests||{}).map(t=>t.plr).filter(Boolean))].sort().reverse();
     $('#plr-list').innerHTML=plrs.map(p=>`<option value="${esc(p)}">`).join('');
     fetch('https://api.github.com/user',{headers:{Authorization:`Bearer ${GH.token}`}}).then(r=>r.ok?r.json():null).then(u=>{if(u){GH.login=u.login; renderGh();}});
-  }catch(e){dbErr='unavailable';}
+    readJson('calibraciones/calibraciones.json').then(j=>{CAL=j; calErr=null; render();},e=>{calErr=e.message; render();});
+  }catch(e){dbErr=['auth','forbidden'].includes(e.message)?e.message:'unavailable'; if(e.message==='auth') GH.invalid=true;}
   render();
 }
 function renderGh(){
@@ -268,7 +288,7 @@ function setPlr(v){
   v=v.trim().toUpperCase(); if(/^\d+$/.test(v)) v='PLR'+v.padStart(6,'0');
   if(v===REQ.plr) return; REQ.plr=v; markStale();
   const ts=testsOf(v); REQ.qtps=new Set(ts.length===1?[ts[0].qtp]:ts.filter(t=>t.status!=='Cancelled').map(t=>t.qtp));
-  render();
+  prefillMeta(); render();
 }
 function renderRequest(){
   const box=$('#qtp-box'), info=$('#test-info');
@@ -294,6 +314,58 @@ function renderRequest(){
       ${row('Dates',[fmtDate(t.start),fmtDate(t.end||t.closedAt)].filter(Boolean).map(esc).join(' → '))}
       ${row('Comments',esc([t.comments,t.labNotes].filter(Boolean).join(' · ')))}`).join('')}
   </tbody></table>`;
+}
+
+/* ---------- Report header (step 1) ----------
+   Filled from the test and editable: report number (QTR + QTP digits + "-" + the report sequence of that QTP), date,
+   author (the technician), title and project. A field typed by hand is not overwritten when the QTPs change. */
+const META={number:'',date:'',author:'',title:'',project:'',edited:new Set(),plr:'',v:0};
+const pad2=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date(); return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`;};
+function prefillMeta(){
+  if(META.plr!==REQ.plr){META.plr=REQ.plr; META.edited=new Set();}
+  const ts=chosenTests(), f=ts[0]; if(!f) return;
+  const auto={number:`QTR${String(f.qtp).replace(/\D/g,'').padStart(4,'0')}-`,date:todayStr(),author:person(f.techId)||f.arasTech||'',
+    title:ts.map(t=>t.title||qtpName(t.qtp)).filter(Boolean).join(' / '),project:f.project||''};
+  for(const k in auto) if(!META.edited.has(k)) META[k]=auto[k];
+  META.v++;
+}
+function renderMeta(){
+  const box=$('#meta'), on=DB&&chosenTests().length; box.hidden=!on;
+  if(!on||box.dataset.v===String(META.v)) return;
+  box.dataset.v=META.v;
+  const f=(k,label,ph,st='')=>`<div class="field"${st}><label for="m-${k}">${label}</label><input id="m-${k}" data-meta="${k}" value="${esc(META[k])}" placeholder="${ph}" autocomplete="off"></div>`;
+  box.innerHTML=`<p class="eyebrow">Report header</p><div class="grid">${f('number','Report number','QTR0739-1')}${f('date','Date','dd/mm/yyyy')}${f('author','Author','')}${f('project','Project','')}</div>
+    ${f('title','Title','',' style="margin-top:12px"')}`;
+}
+
+/* ---------- Calibration plan (read only) ----------
+   Polinya-LAB/lab-data/calibraciones/calibraciones.json, the data of Plan de calibraciones. The instrument table of the report
+   takes model, manufacturer, range and the calibration that was valid when the test was done (not today's). */
+let CAL=null, calErr=null;
+const mIdx=s=>{const m=/^(\d{4})-(\d{1,2})/.exec(String(s||'')); return m?(+m[1])*12+(+m[2]-1):null;};
+const fmtMI=i=>i==null?'':`${pad2(i%12+1)}/${Math.floor(i/12)}`;
+function testMonth(){const s=chosenTests().map(t=>mIdx(t.start)).filter(i=>i!=null); return s.length?Math.min(...s):null;}
+function calEntry(id,e,when){
+  const per=+e.periodMonths||0, periodic=e.calMode==='Periodic', expiry=e.calMode==='Expiry date';
+  const done=[...new Set([e.lastCal,...Object.values(CAL.calibrations||{}).filter(c=>c.equipmentId===id&&c.status==='Done').map(c=>c.month)].map(mIdx).filter(i=>i!=null))].sort((a,b)=>a-b);
+  const latest=done.length?done[done.length-1]:null, due=expiry?mIdx(e.nextOverride):periodic?(mIdx(e.nextOverride)??(latest!=null&&per?latest+per:null)):null;
+  let last=latest, next=due, assumed=false;
+  if(when!=null&&(periodic||expiry)){
+    const before=done.filter(i=>i<=when);
+    if(before.length){last=before[before.length-1]; if(last!==latest) next=periodic&&per?last+per:null;}
+    else if(periodic&&per&&latest!=null){last=latest; while(last>when) last-=per; next=last+per; assumed=true;}
+    else if(latest!=null&&latest>when){last=null;}
+  }
+  return {code:e.code,description:e.description||'',brand:e.brand||'',model:e.model||'',serial:e.serial||'',group:e.group||'',
+    range:(e.points||[]).map(p=>p.range).filter(Boolean).join('; '),calibration:e.calMode||'',
+    lastCal:fmtMI(last)||'N/A',nextCal:fmtMI(next)||'N/A',assumed,expired:when!=null&&next!=null&&next<when};
+}
+const calList=()=>CAL?Object.entries(CAL.equipment||{}).filter(([,e])=>(e.state||'In use')==='In use').map(([id,e])=>calEntry(id,e,testMonth())):[];
+function calByCode(code){
+  const m=String(code||'').toUpperCase().match(/FLE\s*-?\s*(\d+)/); if(!m||!CAL) return null;
+  const k='FLE-'+m[1].padStart(3,'0'), hit=Object.entries(CAL.equipment||{}).find(([,e])=>e.code===k);
+  return hit?calEntry(hit[0],hit[1],testMonth()):null;
 }
 
 /* ---------- Test data: folders with subfolders, read in the browser ----------
@@ -337,6 +409,15 @@ $('#pick-files').onclick=()=>$('#in-files').click();
 $('#in-dir').onchange=e=>{addFiles([...e.target.files].map(file=>({file,path:file.webkitRelativePath||file.name}))); e.target.value='';};
 $('#in-files').onchange=e=>{addFiles([...e.target.files].map(file=>({file,path:file.name}))); e.target.value='';};
 $('#clear').onclick=()=>{FILES.forEach(f=>f.url&&URL.revokeObjectURL(f.url)); FILES.length=0; selFile=null; markStale(); render();};
+/* The test files are only held in this page: nothing is uploaded to storage, and the AI function reads them for the draft
+   without saving them. "Clear all" in step 4 forgets them once the report is downloaded; closing the page does the same. */
+function clearAll(){
+  if(!confirm(PDF.final?'Clear the files, the draft and the PDF from this page? Download the PDF first if you need it.':'The report is still a draft. Clear the files, the draft and the PDF anyway?')) return;
+  FILES.forEach(f=>f.url&&URL.revokeObjectURL(f.url)); FILES.length=0; selFile=null;
+  clearTimeout(PDF.timer); PDF.gen++; if(PDF.url) URL.revokeObjectURL(PDF.url); PDF.url=''; PDF.final=false; PDF.busy=false; PDF.charts.clear();
+  Object.assign(AI,{draft:null,tpl:null,error:'',answers:'',stale:false,edited:false,solved:new Set()});
+  render(); toast('Cleared. Nothing from this report is kept.');
+}
 
 const CDN='https://cdnjs.cloudflare.com/ajax/libs/';
 const scripts={};
@@ -347,6 +428,16 @@ async function pdfText(buf){
   for(let i=1;i<=pdf.numPages;i++){const c=await (await pdf.getPage(i)).getTextContent(); pages.push(c.items.map(t=>t.str+(t.hasEOL?'\n':' ')).join('').trim());}
   return {pages:pdf.numPages,text:pages.map((p,i)=>`--- page ${i+1} ---\n${p}`).join('\n\n'),chars:pages.join('').replace(/\s/g,'').length};
 }
+/* Excel and CSV go to the AI as tab-separated rows with the row number first and a line of column letters, so it can
+   point to a range (e.g. A3:K60) that the page then draws from the real cells. */
+function sheetText(ws,r){
+  const lines=[['row',...Array.from({length:r.e.c-r.s.c+1},(_,i)=>XLSX.utils.encode_col(r.s.c+i))].join('\t')];
+  for(let R=r.s.r;R<=r.e.r;R++){
+    const row=[]; for(let C=r.s.c;C<=r.e.c;C++){const c=ws[XLSX.utils.encode_cell({r:R,c:C})]; row.push(c?String(c.w??c.v??'').replace(/[\t\r\n]+/g,' ').trim():'');}
+    if(row.some(v=>v!=='')) lines.push((R+1)+'\t'+row.join('\t').replace(/\t+$/,''));
+  }
+  return lines.join('\n');
+}
 async function extract(f){
   f.state='reading';
   try{
@@ -356,8 +447,8 @@ async function extract(f){
       const parts=[], sheets=[];
       for(const name of wb.SheetNames){const ws=wb.Sheets[name], ref=ws['!ref']; if(!ref){sheets.push(`${name} (empty)`); continue;}
         const r=XLSX.utils.decode_range(ref), rows=r.e.r-r.s.r+1, cols=r.e.c-r.s.c+1;
-        sheets.push(`${name} (${rows}×${cols})`); parts.push(`=== Sheet: ${name} ===\n`+XLSX.utils.sheet_to_csv(ws,{blankrows:false}));}
-      f.text=parts.join('\n\n'); f.info=`${wb.SheetNames.length} sheet${wb.SheetNames.length>1?'s':''}: ${sheets.join(', ')}`; f.sheets=wb.SheetNames.length;
+        sheets.push(`${name} (${rows}×${cols})`); parts.push(`=== Sheet: ${name} · used range ${ref} ===\n`+sheetText(ws,r));}
+      f.wb=wb; f.text=parts.join('\n\n'); f.info=`${wb.SheetNames.length} sheet${wb.SheetNames.length>1?'s':''}: ${sheets.join(', ')}`; f.sheets=wb.SheetNames.length;
     }else if(f.kind==='word'){
       await loadScript(CDN+'mammoth/1.6.0/mammoth.browser.min.js');
       const r=await window.mammoth.extractRawText({arrayBuffer:await f.file.arrayBuffer()}); f.text=r.value.trim(); f.info=`${f.text.split(/\s+/).filter(Boolean).length} words`;
@@ -436,25 +527,44 @@ function checks(){
     const qs=new Set(); FILES.forEach(f=>(f.path.toUpperCase().match(/QTP\s?\d{3,5}/g)||[]).forEach(m=>qs.add('QTP'+m.replace(/\D/g,'').padStart(4,'0'))));
     const other_q=[...qs].filter(q=>!REQ.qtps.has(q)); if(other_q.length&&ts.length) add('warn',`Some file names mention a QTP not selected: ${other_q.join(', ')}.`,'Tick that QTP in step 1 if this report covers it, or remove those files.');
   }
+  if(ts.length&&!/^QTR\d{3,5}-\d+$/i.test(META.number.trim())) add('crit',`The report number "${META.number}" is not complete.`,`Complete it in step 1 with the report sequence of ${ts[0].qtp}, e.g. QTR${String(ts[0].qtp).replace(/\D/g,'')}-1 for its first report.`);
+  if(ts.length&&!/^\d{2}\/\d{2}\/\d{4}$/.test(META.date.trim())) add('warn','The report date is not in the dd/mm/yyyy format.','Correct it in step 1.');
+  if(DB&&GH.token&&calErr) add('info','The calibration plan could not be read.','The instruments will come only from the files. Check that your GitHub key can read lab-data.');
   if(AI.draft){
-    for(const i of AI.draft.issues) out.push({sev:i.severity,title:i.title,fix:i.fix,src:i.source,ai:true});
-    const adv=AI.draft.template_advice; if(adv&&adv.recommended!==REQ.tpl) out.push({sev:adv.recommended==='simple'?'warn':'info',title:`The AI recommends the ${adv.recommended} template.`,fix:adv.reason,ai:true});
+    const d=AI.draft, used=new Set(), tpl=AI.tpl||REQ.tpl;
+    AI.draft.issues.forEach((i,k)=>out.push({sev:i.severity,title:i.title,fix:i.fix,src:i.source,ai:true,key:k,solved:AI.solved.has(k)}));
+    const adv=d.template_advice;
+    if(adv&&adv.recommended!==REQ.tpl) out.push({sev:adv.recommended==='simple'?'warn':'info',title:`The ${adv.recommended} template would fit this report better.`,fix:`${adv.reason} Choose "${adv.recommended==='simple'?'Simple':'Complex'}" in step 1 and draft again, or keep "${REQ.tpl==='simple'?'Simple':'Complex'}" if it was asked for.`,ai:true});
+    /* What the draft points to must exist in the folder, or the PDF would have holes. */
+    for(const b of [...(tpl==='complex'?d.execution_blocks:[]),...d.results]){
+      if(b.kind==='figure'){const f=fileByPath(b.file); if(f) used.add(f.path); else add('crit',`The figure "${b.caption}" points to a photo that is not in the folder (${b.file}).`,'Ask the AI for the right photo in step 3, or add the photo in step 2.');}
+      else if(b.kind==='table'&&!(b.cells&&b.cells.length)||b.kind==='chart'){
+        const f=fileByPath(b.file); if(f) used.add(f.path);
+        if(!(b.kind==='chart'?chartSeries(b):rangeCells(b))) add('crit',`The ${b.kind} "${b.caption}" points to data that is not in the files (${b.file} › ${b.sheet} › ${b.range}).`,'Correct the sheet or the range in step 4.');
+      }
+    }
+    if(tpl==='complex') for(const a of d.annexes) for(const p of a.pictures){const f=fileByPath(p.file); if(f) used.add(f.path); else add('crit',`The picture "${p.caption}" is not in the folder (${p.file}).`,'Add the photo in step 2, or ask the AI to remove it.');}
+    const unused=FILES.filter(f=>f.kind==='image'&&!used.has(f.path));
+    if(unused.length&&FILES.some(f=>f.kind==='image')) add('info',`${unused.length} photo${unused.length>1?'s are':' is'} not in the report: ${unused.slice(0,4).map(f=>f.name).join(', ')}${unused.length>4?'…':''}.`,'Nothing to do if they are not needed. Otherwise ask the AI in step 3 where to put them.');
+    if(tpl==='complex') for(const r of d.instruments){const e=calByCode(r.code); if(!e) continue;
+      if(e.expired) add('warn',`${e.code} (${e.description}) was out of calibration during the test: next calibration was due ${e.nextCal}.`,'Check it in Plan de calibraciones. If it was calibrated in time, record that calibration there; if not, explain it in QTP Deviations.');
+      else if(e.assumed) add('info',`${e.code} (${e.description}): the calibration in force during the test is not recorded; the report gives ${e.lastCal}, one period before the recorded one.`,'Check the date and correct it in step 4 if needed.');}
   }
-  /* Template advice. Provisional rule until the current reports have been reviewed: the simple template fits one test with a
-     clear result and little data; several tests, many files or Excel books with several sheets need the complex one. */
+  /* Template advice before the AI has seen the data, from what the reference reports show: the simple template is for one
+     test with a clear measurement (curves, torque, vibration, finger test) and few photos; several tests, stages or many
+     photos go in the complex one. */
   if(!AI.draft&&ts.length&&FILES.length){
-    const sheets=FILES.reduce((s,f)=>s+(f.sheets||0),0), dataFiles=FILES.filter(f=>['excel','csv','pdf','word','text'].includes(f.kind)).length;
-    const simpleFits=ts.length===1&&dataFiles<=6&&sheets<=4;
-    if(REQ.tpl==='complex'&&simpleFits) add('warn','The simple template would be enough for this report.',`It is one test (${ts[0].qtp}) with ${dataFiles} data file${dataFiles!==1?'s':''}. Choose "Simple" in step 1, or keep "Complex" if the client asked for it.`);
-    if(REQ.tpl==='simple'&&!simpleFits) add('info','This report may not fit the simple template.',`It has ${ts.length} test${ts.length>1?'s':''} and ${dataFiles} data files. Consider "Complex" in step 1.`);
+    const photos=FILES.filter(f=>f.kind==='image').length, simpleFits=ts.length===1&&photos<=10;
+    if(REQ.tpl==='complex'&&simpleFits) add('warn','The simple template would be enough for this report.',`It is one test (${ts[0].qtp}) with ${photos} photo${photos!==1?'s':''}. Choose "Simple" in step 1, or keep "Complex" if the report needs samples, instruments and picture annexes.`);
+    if(REQ.tpl==='simple'&&!simpleFits) add('info','This report may not fit the simple template.',`It has ${ts.length} test${ts.length>1?'s':''} and ${photos} photos. Consider "Complex" in step 1.`);
   }
   return out;
 }
 function renderReview(){
-  const list=checks(), order={crit:0,warn:1,info:2,ok:3}; list.sort((a,b)=>order[a.sev]-order[b.sev]);
-  const n=s=>list.filter(i=>i.sev===s).length;
+  const list=checks(), order={crit:0,warn:1,info:2,ok:3}; list.sort((a,b)=>(a.solved-b.solved)||order[a.sev]-order[b.sev]);
+  const n=s=>list.filter(i=>i.sev===s&&!i.solved).length;
   const head=REQ.plr&&FILES.length?`<div class="sum"><span><b>${n('crit')}</b> to solve</span><span><b>${n('warn')}</b> to check</span><span><b>${n('info')}</b> notes</span></div>`:'';
-  $('#review').innerHTML=head+(list.length?`<div class="issues">${list.map(i=>`<div class="issue ${i.sev}"><b>${esc(i.title)}${i.ai?'<span class="tag">AI</span>':''}</b>${i.fix?`<div class="fix">${esc(i.fix)}</div>`:''}${i.src?`<div class="src">${esc(i.src)}</div>`:''}</div>`).join('')}</div>`:`<div class="issue ok"><b>No problems found in the data.</b><div class="muted">${AI.draft?'The AI found nothing either.':'The AI review of the content will be added here.'}</div></div>`)
+  $('#review').innerHTML=head+(list.length?`<div class="issues">${list.map(i=>`<div class="issue ${i.sev}${i.solved?' solved':''}">${i.key!=null?`<label class="solve"><input type="checkbox" data-solve="${i.key}" ${i.solved?'checked':''}>Solved</label>`:''}<b>${esc(i.title)}${i.ai?'<span class="tag">AI</span>':''}</b>${i.fix?`<div class="fix">${esc(i.fix)}</div>`:''}${i.src?`<div class="src">${esc(i.src)}</div>`:''}</div>`).join('')}</div>`:`<div class="issue ok"><b>No problems found in the data.</b><div class="muted">${AI.draft?'The AI found nothing either.':'The AI review of the content will be added here.'}</div></div>`)
     +(AI.draft?'':`<p class="empty" style="margin-top:12px">The AI draft adds what it finds in the content of the files to this list.</p>`);
 }
 
@@ -462,7 +572,7 @@ function renderReview(){
    The page signs in with Supabase (email link, Fluidra addresses only) and sends the request to the function, which holds the
    Anthropic key. The URL and the publishable key below are public by design: access is controlled by the sign-in. */
 const SUPA={url:'https://otfmpfkbobetynoqqnnu.supabase.co',key:'sb_publishable_Txvap2YLR8Q9DjF_0fJx6A_k_Y5QEpQ'};   // project Automatic Reports (Polinya LAB)
-const AI={client:null,user:null,busy:false,draft:null,error:'',answers:'',stale:false,sent:null,usage:null};
+const AI={client:null,user:null,busy:false,draft:null,tpl:null,error:'',answers:'',stale:false,usage:null,seconds:null,solved:new Set()};
 const aiReady=()=>!!(SUPA.url&&SUPA.key);
 async function initAi(){
   if(!aiReady()) return renderAi();
@@ -480,39 +590,51 @@ async function signIn(){
   const {error}=await AI.client.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
   toast(error?'Could not send the link: '+error.message:`Sign-in link sent to ${email}. Open it in this browser.`);
 }
-/* Photos are reduced to 1568 px (what the AI reads at most) before sending. */
-async function photoB64(f){
+/* Photos go to the AI reduced to 1200 px, enough to judge them and light enough for the request. */
+async function photoData(f,max,q){
   const img=await new Promise((res,rej)=>{const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=f.url;});
-  const k=Math.min(1,1568/Math.max(img.naturalWidth,img.naturalHeight)), c=document.createElement('canvas');
-  c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-  return c.toDataURL('image/jpeg',0.8).split(',')[1];
+  const k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)), c=document.createElement('canvas');
+  c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k);
+  const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',q);
 }
 const bufB64=async file=>{const b=new Uint8Array(await file.arrayBuffer()); let s=''; for(let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(s);};
-const MAX_PHOTOS=60, MAX_TEXT=150000;
+const MAX_PHOTOS=40, MAX_TEXT=150000;
 async function buildPayload(){
   const files=[]; let photos=0;
   for(const f of FILES){
     if(f.state!=='ok') continue;
-    if(f.kind==='image'){ if(++photos>MAX_PHOTOS) continue; files.push({path:f.path,kind:f.kind,info:f.info,image:await photoB64(f)}); }
+    if(f.kind==='image'){ if(++photos>MAX_PHOTOS) continue; files.push({path:f.path,kind:f.kind,info:f.info,image:(await photoData(f,1200,0.75)).split(',')[1]}); }
     else if(f.kind==='pdf'&&f.scanned&&f.size<15e6) files.push({path:f.path,kind:f.kind,pdf:await bufB64(f.file)});
     else if(f.text) files.push({path:f.path,kind:f.kind,info:f.info,text:f.text.length>MAX_TEXT?f.text.slice(0,MAX_TEXT)+'\n[… truncated]':f.text});
   }
   const tests=chosenTests().map(t=>({...t,qtpName:qtpName(t.qtp),technician:person(t.techId)||t.arasTech,equipment:bench(t.equipmentId)||t.arasEquipment,qtpDefinition:(DB.qtps||{})[t.qtp]||null}));
-  return {template:REQ.tpl,plr:REQ.plr,tests,files,answers:AI.answers||undefined,_photosLeft:Math.max(0,photos-MAX_PHOTOS)};
+  const previous=AI.draft&&AI.answers.trim()?AI.draft:undefined;
+  return {template:REQ.tpl,plr:REQ.plr,meta:{report_number:META.number,author:META.author,date:META.date,project:META.project,title:META.title},tests,instruments:calList(),files,answers:AI.answers||undefined,previous,_photosLeft:Math.max(0,photos-MAX_PHOTOS)};
 }
 async function draftReport(){
   if(AI.busy) return;
+  if(AI.draft&&AI.edited&&!AI.answers.trim()&&!confirm('Drafting again from scratch replaces the changes made in step 4. To keep them, write the corrections in the box instead. Draft again?')) return;
   AI.busy=true; AI.error=''; renderAi();
   try{
     const body=await buildPayload(); const left=body._photosLeft; delete body._photosLeft;
-    if(left) toast(`Only the first ${MAX_PHOTOS} photos are sent; ${left} left out.`);
+    if(left) toast(`Only the first ${MAX_PHOTOS} photos are sent to the AI; ${left} left out.`);
     const {data,error}=await AI.client.functions.invoke('draft-report',{body});
     if(error){let msg=error.message; try{msg=(await error.context.json()).error||msg;}catch(e){} throw new Error(msg);}
-    AI.draft=data.draft; AI.usage=data.usage; AI.stale=false; AI.sent=Date.now();
+    AI.draft=normDraft(data.draft); AI.tpl=body.template; AI.usage=data.usage; AI.seconds=data.seconds; AI.stale=false; AI.edited=false; AI.solved=new Set(); AI.answers='';
+    if(!META.edited.has('title')&&AI.draft.title){META.title=AI.draft.title; META.v++;}
   }catch(e){AI.error=e.message||String(e);}
-  finally{AI.busy=false; render();}
+  finally{AI.busy=false; render(); schedulePdf(0);}
+}
+/* Fills the instrument rows that point to the calibration plan with the plan's data, so the table matches the plan. */
+function normDraft(d){
+  for(const r of d.instruments||[]){const e=calByCode(r.code); if(!e) continue;
+    Object.assign(r,{model_code:[e.model,e.code].filter(Boolean).join(' / '),manufacturer:e.brand||r.manufacturer,range:r.range||e.range,last_revision:e.lastCal||'N/A',next_revision:e.nextCal||'N/A',instrument:r.instrument||e.description});}
+  return d;
 }
 function markStale(){ if(AI.draft) AI.stale=true; }
+const aiBtnLabel=()=>AI.busy?'Drafting… (up to two minutes)':AI.draft?(AI.answers.trim()?'Apply corrections':'Draft again'):'Draft report with AI';
+function renderAiButton(){const b=$('#ai-draft-btn'); if(b) b.textContent=aiBtnLabel();}
 function renderAi(){
   const box=$('#ai'); if(!box) return;
   let html='<div class="ai-bar">';
@@ -523,51 +645,332 @@ function renderAi(){
     const ready=REQ.plr&&chosenTests().length&&FILES.length&&!FILES.some(f=>f.state==='pending'||f.state==='reading');
     html+=`<span class="muted">Signed in as ${esc(AI.user.email)}</span><span class="sp"></span>
       <button class="btn sm" data-act="ai-out">Sign out</button>
-      <button class="btn primary" data-act="ai-draft" ${ready&&!AI.busy?'':'disabled'}>${AI.busy?'Drafting… (this can take a few minutes)':AI.draft?'Draft again':'Draft report with AI'}</button>`;
+      <button class="btn primary" data-act="ai-draft" id="ai-draft-btn" ${ready&&!AI.busy?'':'disabled'}>${aiBtnLabel()}</button>`;
   }
   html+='</div>';
   if(AI.error) html+=`<div class="issue crit" style="margin-top:10px"><b>The draft failed: ${esc(AI.error)}</b></div>`;
   if(AI.draft){
     if(AI.stale) html+='<div class="banner" style="margin-top:10px">The request or the files changed after this draft. Draft again to update it.</div>';
-    html+=`<label class="field" style="display:block;margin-top:12px"><span class="eyebrow">Answers and corrections for the next draft</span>
-      <textarea class="answers" id="ai-answers" placeholder="E.g. Sample 3 was damaged before the test; the acceptance criterion is ≤ 5 bar.">${esc(AI.answers)}</textarea></label>`;
+    html+=`<label class="field" style="display:block;margin-top:12px"><span class="eyebrow">Answers and corrections for the AI</span>
+      <textarea class="answers" id="ai-answers" placeholder="E.g. Sample 3 was damaged before the test. The P/N of all samples is 079929. Group the photos by sample.">${esc(AI.answers)}</textarea></label>
+      <p class="muted" style="font-size:13px;margin:6px 0 0">Small changes are quicker in the editor of step 4; tick each AI problem as solved once it is fixed.</p>`;
   }
   box.innerHTML=html;
 }
-const fill=t=>esc(t).replace(/\[MISSING:[^\]]*\]/g,m=>`<span class="miss">${m}</span>`);
-function renderFinal(){
-  const box=$('#final'), d=AI.draft&&AI.draft.report;
-  $('#s4').classList.toggle('off',!d);
-  if(!d){box.innerHTML='<p class="empty">Available once the AI draft is connected and every problem in step 3 is solved.</p>'; return;}
-  const sec=(h,t)=>t?`<h4>${h}</h4><p>${fill(t)}</p>`:'';
-  const img=p=>{const f=FILES.find(x=>x.path===p); return f&&f.url?`<img src="${f.url}" alt="">`:`<div class="miss">${esc(p)}</div>`;};
-  box.innerHTML=`<p class="muted" style="font-size:13px;margin:0">Provisional layout: the final PDF will use the ${REQ.tpl} template once it is in.</p>
-  <div class="draft">
-    <h3>${fill(d.title)}</h3><p class="cap">${esc(REQ.plr)} · ${chosenTests().map(t=>esc(t.qtp)).join(', ')} · <span class="res ${esc(d.result)}">${esc(d.result)}</span></p>
-    ${sec('Summary',d.summary)}${sec('Objective',d.objective)}
-    ${d.reference_documents.length?`<h4>Reference documents</h4><p>${d.reference_documents.map(fill).join('<br>')}</p>`:''}
-    ${d.samples.length?`<h4>Samples</h4><table><tr><th>ID</th><th>Description</th></tr>${d.samples.map(x=>`<tr><td>${fill(x.id)}</td><td>${fill(x.description)}</td></tr>`).join('')}</table>`:''}
-    ${d.equipment.length?`<h4>Equipment</h4><table><tr><th>Equipment</th><th>Identification</th><th>Calibration</th></tr>${d.equipment.map(x=>`<tr><td>${fill(x.name)}</td><td>${fill(x.identification)}</td><td>${fill(x.calibration)}</td></tr>`).join('')}</table>`:''}
-    ${sec('Procedure',d.procedure)}${sec('Results',d.results)}
-    ${d.tables.map(t=>`<table><tr>${t.columns.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>${t.rows.map(r=>`<tr>${r.map(c=>`<td>${fill(c)}</td>`).join('')}</tr>`).join('')}</table><p class="cap">${esc(t.caption)}${t.source?` · Source: ${esc(t.source)}`:''}</p>`).join('')}
-    ${d.figures.length?`<div class="figs">${d.figures.map(f=>`<figure style="margin:0">${img(f.file)}<p class="cap">${esc(f.caption)}</p></figure>`).join('')}</div>`:''}
-    ${sec('Conclusion',d.conclusion)}${sec('Observations',d.observations)}
-  </div>`;
+
+/* ---------- Final report (step 4): editor over the draft and PDF with the lab template ----------
+   The PDF is built in this browser with pdfmake, following QTR Template (complex) and QTR Template Simplified: header with the
+   Fluidra logo on every page, Test Summary on page 1, then Test Results Details + Conclusions (simple) or the numbered sections
+   with index and picture annexes (complex). Tables and charts that come from Excel are drawn from the real cells. While there
+   is something to solve the PDF carries a DRAFT watermark. */
+const JSD='https://cdn.jsdelivr.net/npm/';
+const NAVY='#001A70', BAR='#C6D9F1', HEAD='#B8CCE4', HCOL='#17365D', LINE='#153D63', PASS_FILL='#66FF33', FAIL_FILL='#FF6B6B';
+const SERIES=['#001A70','#C0504D','#2D7F55','#E3A43A','#3866AE','#7F4FA0','#0A6C7C','#8C564B'];
+const PDF={timer:null,gen:0,url:'',busy:false,error:'',final:false,logo:undefined,charts:new Map()};
+const getP=(o,p)=>p.split('.').reduce((a,k)=>a==null?a:a[k],o);
+function setP(o,p,v){const ks=p.split('.'), last=ks.pop(); const t=ks.reduce((a,k)=>a[k],o); if(t) t[last]=v;}
+
+/* Files named by the AI: exact path first, then the same path without the dropped folder, then the file name. */
+function fileByPath(p){
+  p=String(p||'').trim().replace(/^\.?\/+/,''); if(!p) return null;
+  const lc=p.toLowerCase();
+  return FILES.find(f=>f.path===p)||FILES.find(f=>f.path.toLowerCase()===lc)||FILES.find(f=>f.path.toLowerCase().endsWith('/'+lc)||lc.endsWith('/'+f.path.toLowerCase()))
+    ||FILES.find(f=>f.name.toLowerCase()===lc.split('/').pop())||null;
+}
+function sheetOf(b){
+  const f=fileByPath(b.file); if(!f||!f.wb) return null;
+  const want=String(b.sheet||'').trim().toLowerCase(), names=f.wb.SheetNames;
+  const name=names.find(s=>s.toLowerCase()===want)||(!want||names.length===1?names[0]:null);
+  const ws=name&&f.wb.Sheets[name]; return ws&&ws['!ref']?{f,ws,name}:null;
+}
+function rangeOf(ws,range){
+  try{
+    const full=XLSX.utils.decode_range(ws['!ref']), r=XLSX.utils.decode_range(String(range||ws['!ref']).split('!').pop().replace(/\$/g,'').trim().toUpperCase());
+    r.e.r=Math.min(r.e.r,full.e.r); r.e.c=Math.min(r.e.c,full.e.c);
+    return r.s.r<=r.e.r&&r.s.c<=r.e.c?r:null;
+  }catch(e){return null;}
+}
+/* Cells of an Excel range as shown in Excel (formatted text), without empty rows and columns. Long tables stop at 400 rows. */
+function rangeCells(b){
+  const s=sheetOf(b); if(!s) return null; const r=rangeOf(s.ws,b.range); if(!r) return null;
+  let rows=[];
+  for(let R=r.s.r;R<=Math.min(r.e.r,r.s.r+400);R++){
+    const row=[]; for(let C=r.s.c;C<=r.e.c;C++){const c=s.ws[XLSX.utils.encode_cell({r:R,c:C})]; row.push(c?String(c.w??c.v??'').trim():'');}
+    if(row.some(v=>v!=='')) rows.push(row);
+  }
+  if(!rows.length) return null;
+  const keep=rows[0].map((_,c)=>rows.some(r=>r[c]!=='')); rows=rows.map(r=>r.filter((_,c)=>keep[c]));
+  return rows;
+}
+function chartSeries(b){
+  const s=sheetOf(b); if(!s||!b.x_col||!(b.y_cols||[]).length) return null; const r=rangeOf(s.ws,b.range); if(!r) return null;
+  const cell=(R,C)=>s.ws[XLSX.utils.encode_cell({r:R,c:C})];
+  const num=(R,C)=>{const c=cell(R,C); if(!c) return null; if(typeof c.v==='number') return c.v; const x=parseFloat(String(c.v).replace(',','.')); return isFinite(x)?x:null;};
+  const head=C=>{const c=cell(r.s.r,C); return c?String(c.w??c.v):XLSX.utils.encode_col(C);};
+  let xC; try{xC=XLSX.utils.decode_col(String(b.x_col).trim().toUpperCase());}catch(e){return null;}
+  const sets=b.y_cols.map(col=>{const C=XLSX.utils.decode_col(String(col).trim().toUpperCase()), data=[];
+    for(let R=r.s.r+1;R<=r.e.r;R++){const x=num(R,xC), y=num(R,C); if(x!=null&&y!=null) data.push({x,y});}
+    return {label:head(C),data};}).filter(s=>s.data.length);
+  return sets.length?{sets,xHead:head(xC)}:null;
+}
+async function chartImage(b){
+  const key=JSON.stringify([b.file,b.sheet,b.range,b.x_col,b.y_cols,b.x_label,b.y_label]);
+  if(PDF.charts.has(key)) return PDF.charts.get(key);
+  const cs=chartSeries(b); if(!cs) return null;
+  await loadScript(JSD+'chart.js@4.4.1/dist/chart.umd.js');
+  const cv=document.createElement('canvas'); cv.width=1400; cv.height=780; $('#chart-holder').appendChild(cv);
+  const font=s=>({size:s,family:'Arial'});
+  const ch=new Chart(cv.getContext('2d'),{type:'scatter',
+    data:{datasets:cs.sets.map((s,i)=>({...s,borderColor:SERIES[i%SERIES.length],backgroundColor:SERIES[i%SERIES.length],showLine:true,pointRadius:3,borderWidth:2.5}))},
+    options:{responsive:false,animation:false,devicePixelRatio:1,
+      plugins:{legend:{display:cs.sets.length>1,labels:{font:font(22)}}},
+      scales:{x:{title:{display:true,text:b.x_label||cs.xHead,font:font(24)},ticks:{font:font(20)}},
+              y:{title:{display:true,text:b.y_label||(cs.sets.length===1?cs.sets[0].label:''),font:font(24)},ticks:{font:font(20)}}}},
+    plugins:[{id:'white',beforeDraw:c=>{const g=c.ctx; g.save(); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.restore();}}]});
+  const url=cv.toDataURL('image/png'); ch.destroy(); cv.remove();
+  PDF.charts.set(key,url); return url;
+}
+/* Photos go in the PDF at 1400 px, enough for print at the size they take on the page. */
+async function pdfPhoto(f){ if(!f.pdfImg) f.pdfImg=await photoData(f,1400,0.82); return f.pdfImg; }
+async function logoData(){
+  if(PDF.logo!==undefined) return PDF.logo;
+  try{const b=await (await fetch('logo-fluidra.png')).blob(); PDF.logo=await new Promise(res=>{const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(b);});}
+  catch(e){PDF.logo=null;}
+  return PDF.logo;
 }
 
-function render(){renderGh(); renderRequest(); renderFiles(); renderReview(); renderAi(); renderFinal();}
+/* Text: paragraphs separated by a blank line, "- " lines as bullets, [MISSING: …] highlighted. */
+const rich=s=>String(s??'').split(/(\[MISSING:[^\]]*\])/).filter(Boolean).map(p=>p.startsWith('[MISSING:')?{text:p,background:'#FFE699',color:'#B8322B'}:p);
+function paras(t){
+  const out=[];
+  for(const b of String(t||'').replace(/\r/g,'').trim().split(/\n[ \t]*\n/)){
+    if(!b.trim()) continue; let ul=null;
+    for(const l of b.split('\n')){const m=/^\s*[-•*]\s+(.*)$/.exec(l);
+      if(m){if(!ul){ul={ul:[],margin:[8,0,0,0]}; out.push(ul);} ul.ul.push({text:rich(m[1])});}
+      else{ul=null; out.push({text:rich(l)});}}
+    const last=out[out.length-1]; last.margin=[(last.margin||[0])[0],0,0,6];
+  }
+  if(out.length) out[out.length-1].margin=[(out[out.length-1].margin||[0])[0],0,0,0];
+  return out.length?out:[{text:' '}];
+}
+const grid=(w=0.5,c='#000')=>({hLineWidth:()=>w,vLineWidth:()=>w,hLineColor:()=>c,vLineColor:()=>c});
+function dataTable(rows,o={}){
+  const nc=Math.max(...rows.map(r=>r.length)), fs=o.fontSize||(nc<=4?9:nc<=7?8:nc<=11?7:nc<=16?6:5);
+  const body=rows.map((r,i)=>Array.from({length:nc},(_,c)=>({text:rich(r[c]??''),fontSize:fs,alignment:'center',bold:i===0,fillColor:i===0?HEAD:null,margin:[1,1,1,1]})));
+  return {table:{headerRows:1,widths:o.widths||Array(nc).fill('*'),body,dontBreakRows:true},layout:grid(),margin:[0,0,0,4]};
+}
+const centered=node=>({columns:[{width:'*',text:''},{width:'auto',...node},{width:'*',text:''}]});
+function caption(kind,n,text,tpl){
+  if(tpl==='simple') return {text:[{text:`${kind} ${n}.`,bold:true,decoration:'underline'},' '+(text||'')],alignment:'center',fontSize:9,margin:[0,4,0,14]};
+  return {text:`${kind} ${n}. ${text||''}`,alignment:'center',fontSize:9,margin:kind==='Table'?[0,8,0,3]:[0,3,0,10],headlineLevel:kind==='Table'?1:undefined};
+}
+async function blocks(list,tpl,n){
+  const out=[];
+  for(const b of list||[]){
+    if(b.kind==='text'){out.push({stack:paras(b.text),margin:[0,0,0,8]}); continue;}
+    if(b.kind==='table'){
+      const rows=b.cells&&b.cells.length?b.cells:rangeCells(b), cap=caption('Table',++n.table,b.caption,tpl);
+      const t=rows?dataTable(rows):{text:rich(`[MISSING: data of "${b.caption}" (${b.file} › ${b.sheet} › ${b.range})]`)};
+      out.push(...(tpl==='simple'?[t,cap]:[cap,t])); continue;
+    }
+    if(b.kind==='chart'){
+      const img=await chartImage(b);
+      out.push(img?{image:img,width:430,alignment:'center',margin:[0,8,0,2]}:{text:rich(`[MISSING: data of the chart "${b.caption}"]`)},caption('Figure',++n.figure,b.caption,tpl)); continue;
+    }
+    if(b.kind==='figure'){
+      const f=fileByPath(b.file), img=f&&f.kind==='image'&&f.url?await pdfPhoto(f):null;
+      out.push(img?{image:img,fit:[400,300],alignment:'center',margin:[0,8,0,2]}:{text:rich(`[MISSING: photo ${b.file}]`)},caption('Figure',++n.figure,b.caption,tpl));
+    }
+  }
+  return out;
+}
+/* Picture grid; the group title travels with the first row of pictures so it never stays alone at the foot of a page. */
+async function pictureGrid(pics,n,title){
+  const cells=[];
+  for(const p of pics){
+    const f=fileByPath(p.file), img=f&&f.kind==='image'&&f.url?await pdfPhoto(f):null, no=++n.picture;
+    cells.push({stack:[img?{image:img,fit:[262,196],alignment:'center',margin:[0,3,0,3]}:{text:rich(`[MISSING: photo ${p.file}]`),margin:[6,60,6,60]},
+      {table:{widths:['*'],body:[[{text:`Picture ${no}. ${p.caption||''}`,fontSize:8.5,alignment:'center',fillColor:BAR,margin:[2,1,2,1]}]]},layout:'noBorders'}]});
+  }
+  if(cells.length%2) cells.push({text:''});
+  const body=[]; for(let i=0;i<cells.length;i+=2) body.push([cells[i],cells[i+1]]);
+  const tbl=rows=>({table:{widths:['*','*'],body:rows,dontBreakRows:true},layout:{...grid(0.75,'#7F7F7F'),paddingLeft:()=>0,paddingRight:()=>0,paddingTop:()=>0,paddingBottom:()=>0}});
+  return [{stack:[title,tbl(body.slice(0,1))],unbreakable:true},...(body.length>1?[tbl(body.slice(1))]:[]),{text:'',margin:[0,0,0,10]}];
+}
+function headerTable(logo,tpl){
+  const c=t=>({text:t||' ',bold:true,fontSize:8.5,margin:[3,3,3,2]});
+  return {margin:[36,24,36,0],table:{widths:[232,'*',128],body:[
+    [logo?{image:logo,fit:[190,44],alignment:'center',rowSpan:2,margin:[0,3,0,0]}:{text:'FLUIDRA',bold:true,fontSize:20,color:NAVY,alignment:'center',rowSpan:2},c(META.number),c(REQ.plr)],
+    ['',c('Author: '+META.author),c('Date: '+META.date)],
+    [{text:'Qualification Test Results',bold:true,fontSize:15,color:'white',fillColor:NAVY,alignment:'center',margin:[0,2,0,1]},c((tpl==='simple'?'Title: ':'')+META.title),c(META.project)]]},
+    layout:grid(0.75,LINE)};
+}
+function summaryTable(d){
+  const s=d.summary, full=x=>[{...x,colSpan:2},''];
+  const bar=(t,o={})=>({text:t,bold:true,fontSize:10.5,fillColor:BAR,margin:[5,2,4,2],...o});
+  const box=t=>({stack:paras(t),margin:[3,3,3,5]});
+  const acc=s.acceptance.length?s.acceptance:[{criterion:'[MISSING: acceptance criteria]',result:'N/A'}];
+  return {table:{widths:['*',112],body:[
+    full({text:'Test Summary',bold:true,fontSize:11,color:'white',fillColor:NAVY,alignment:'center',margin:[0,2,0,2]}),
+    full(bar('Test Description')), full(box(s.test_description)),
+    full(bar('Test Sample Information')), full(box(s.sample_information)),
+    full(bar('QTP Deviations')), full(box(s.qtp_deviations)),
+    [bar('Acceptance Criteria'),bar('Pass / Fail',{alignment:'center'})],
+    ...acc.map(a=>[box(a.criterion),{text:a.result,bold:true,fontSize:11,alignment:'center',fillColor:a.result==='PASS'?PASS_FILL:a.result==='FAIL'?FAIL_FILL:null,margin:[2,10,2,10]}]),
+    full(bar('Test Results Summary')), full(box(s.results_summary))]},
+    layout:grid(0.75,LINE)};
+}
+async function complexBody(d,n){
+  let sec=0, sub=0;
+  const h1=(t,o={})=>{sec++; sub=0; return {text:`${sec}.  ${t}`,style:'h1',headlineLevel:1,tocItem:true,tocStyle:{bold:true,color:HCOL,fontSize:9.5},tocMargin:[0,5,0,0],...o};};
+  const h2=t=>({text:`${sec}.${++sub}  ${t}`,style:'h2',headlineLevel:1,tocItem:true,tocStyle:{color:HCOL,fontSize:9},tocMargin:[14,2,0,0]});
+  const out=[{toc:{title:{text:'Index',style:'index'}},pageBreak:'before'}];
+  out.push(h1('TEST DESCRIPTION',{pageBreak:'before'}), h2('SAMPLES DESCRIPTION'), caption('Table',++n.table,'Tested samples','complex'));
+  out.push(d.samples.length?dataTable([['S/N','P/N','PROJECT PHASE','Nº DRAWING /REV','DESCRIPTION','RECEPTION DATE'],...d.samples.map(s=>[s.sn,s.pn,s.phase,s.drawing_rev,s.description,s.reception_date])],{fontSize:8.5})
+    :{text:rich('[MISSING: tested samples]')});
+  if(d.standards.trim()) out.push(h2('STANDARDS'),...paras(d.standards));
+  out.push(h2('EXECUTION DESCRIPTION'),{stack:paras(d.execution_description),margin:[0,0,0,8]},...await blocks(d.execution_blocks,'complex',n));
+  out.push(h2('MEASUREMENTS INSTRUMENTS AND ENVIRONMENTAL CONDITIONS'),caption('Table',++n.table,'Measurements instruments','complex'));
+  out.push(d.instruments.length?dataTable([['INSTRUMENT','CHARACTERISTIC OF CONTROL','MODEL / INVENTORY CODE','MANUFACTURER','CAPACITY RANGE & UNITS OF MEASUREMENT','LAST REVISION','NEXT REVISION'],
+    ...d.instruments.map(i=>[i.instrument,i.characteristic,i.model_code,i.manufacturer,i.range,i.last_revision,i.next_revision])],{fontSize:7.5,widths:['*','*','*','*','*',46,46]})
+    :{text:rich('[MISSING: measurement instruments]')});
+  out.push(caption('Table',++n.table,'Conditions','complex'),centered({table:{widths:[110,90],body:[
+    [{text:'ENVIRONMENTAL CONDITIONS',colSpan:2,bold:true,fillColor:HEAD,alignment:'center',fontSize:8.5},''],
+    [{text:'Temperature',fontSize:8.5},{text:rich(d.environment.temperature||'N/A'),fontSize:8.5,alignment:'center'}],
+    [{text:'Humidity',fontSize:8.5},{text:rich(d.environment.humidity||'N/A'),fontSize:8.5,alignment:'center'}]]},layout:grid()}));
+  out.push(h1('RESULTS'),...await blocks(d.results,'complex',n));
+  out.push(h1('CONCLUSION'),...paras(d.conclusion));
+  if(d.annexes.some(a=>a.pictures.length)){
+    out.push(h1('ANNEXES',{pageBreak:'before'}));
+    for(const a of d.annexes) if(a.pictures.length) out.push(...await pictureGrid(a.pictures,n,h2(String(a.title||'').toUpperCase())));
+  }
+  return out;
+}
+async function simpleBody(d,n){
+  return [{text:'Test Results Details',style:'simpleH',pageBreak:'before'},...await blocks(d.results,'simple',n),
+          {text:'Conclusions',style:'simpleH',pageBreak:'before'},...paras(d.conclusion)];
+}
+async function docDef(final){
+  const d=AI.draft, tpl=AI.tpl||REQ.tpl, n={table:0,figure:0,picture:0}, logo=await logoData();
+  const content=[summaryTable(d),...(tpl==='complex'?await complexBody(d,n):await simpleBody(d,n))];
+  return {pageSize:'LETTER',pageMargins:[36,112,36,44],
+    info:{title:`${META.number} ${META.title}`,author:META.author,subject:'Qualification Test Results',creator:'Laboratorio Polinyà · Test Reports'},
+    header:()=>headerTable(logo,tpl),
+    pageBreakBefore:node=>node.headlineLevel===1&&node.startPosition.top>660,   // no heading or table caption in the last lines of a page
+    footer:p=>({text:String(p),alignment:'center',fontSize:9,margin:[0,16,0,0]}),
+    watermark:final?undefined:{text:'DRAFT',color:'#B8322B',opacity:0.1,bold:true},
+    defaultStyle:{font:'Roboto',fontSize:9.5,lineHeight:1.15},
+    styles:{h1:{bold:true,fontSize:10.5,color:HCOL,margin:[0,14,0,6]},h2:{bold:true,fontSize:10,color:HCOL,margin:[4,10,0,6]},
+      index:{fontSize:16,color:'#2F5496',alignment:'right',margin:[0,0,0,16]},simpleH:{bold:true,fontSize:12,alignment:'center',decoration:'underline',margin:[0,0,0,14]}},
+    content};
+}
+function schedulePdf(ms=1000){ clearTimeout(PDF.timer); if(AI.draft) PDF.timer=setTimeout(buildPdf,ms); }
+async function buildPdf(){
+  const gen=++PDF.gen; PDF.busy=true; PDF.error=''; renderFinalBar();
+  try{
+    await loadScript(JSD+'pdfmake@0.2.10/build/pdfmake.min.js'); await loadScript(JSD+'pdfmake@0.2.10/build/vfs_fonts.js');
+    const final=finalState().final, doc=await docDef(final); if(gen!==PDF.gen) return;
+    const blob=await new Promise((res,rej)=>{try{pdfMake.createPdf(doc).getBlob(res);}catch(e){rej(e);}});
+    if(gen!==PDF.gen) return;
+    if(PDF.url) URL.revokeObjectURL(PDF.url);
+    PDF.url=URL.createObjectURL(blob); PDF.final=final;
+    const fr=$('#pdf-frame'); if(fr) fr.src=PDF.url;
+  }catch(e){PDF.error='The PDF could not be made: '+(e.message||e); console.error(e);}
+  finally{if(gen===PDF.gen){PDF.busy=false; renderFinalBar();}}
+}
+/* Final once nothing blocks it: no problem to solve in step 3 (AI problems count until ticked as solved), no [MISSING] left,
+   a complete report number and a draft that matches the request. */
+function finalState(){
+  const open=checks().filter(i=>!i.solved);
+  const todo=open.filter(i=>i.sev==='crit'||(i.ai&&i.sev==='warn')).length;
+  let missing=0;
+  if(AI.draft){   // only what the template prints: the simple one has no samples, instruments or annexes
+    const {issues,template_advice,...rest}=AI.draft, d=AI.draft;
+    const printed=(AI.tpl||REQ.tpl)==='simple'?{title:d.title,summary:d.summary,results:d.results,conclusion:d.conclusion}:rest;
+    missing=(JSON.stringify(printed).match(/\[MISSING:/g)||[]).length;}
+  return {todo,missing,stale:AI.stale,final:!!AI.draft&&!todo&&!missing&&!AI.stale};
+}
+const pdfName=final=>`${META.number} ${META.title}`.replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim()+(final?'':' DRAFT')+'.pdf';
+function renderFinalBar(){
+  const bar=$('#final-bar'); if(!bar) return;
+  const s=finalState(), parts=[];
+  if(s.todo) parts.push(`${s.todo} problem${s.todo>1?'s':''} in step 3`);
+  if(s.missing) parts.push(`${s.missing} [MISSING] field${s.missing>1?'s':''}`);
+  if(s.stale) parts.push('the draft, which is out of date');
+  const list=parts.length>1?parts.slice(0,-1).join(', ')+' and '+parts[parts.length-1]:parts[0];
+  bar.innerHTML=`<span class="chip ${s.final?'ok':'warn'}">${s.final?'FINAL':'DRAFT'}</span>
+    <span>${s.final?'Everything is solved. This is the final report.':`To get the final report, solve ${list}.`}</span><span class="sp"></span>
+    ${PDF.busy?'<span class="muted">Updating the PDF…</span>':''}${PDF.error?`<span class="chip crit">${esc(PDF.error)}</span>`:''}
+    <button class="btn" data-act="finish" title="Forget the files, the draft and the PDF in this page">Clear all</button>
+    <a class="btn primary" ${PDF.url?`href="${PDF.url}" download="${esc(pdfName(PDF.final))}"`:'aria-disabled="true"'}>Download PDF${PDF.url&&!PDF.final?' (draft)':''}</a>`;
+  if(PDF.url&&!PDF.busy&&s.final!==PDF.final) schedulePdf(300);
+}
+const missCls=v=>/\[MISSING:/.test(v||'')?' miss-f':'';
+const ta=(p,label,rows=3)=>{const v=getP(AI.draft,p)??''; return `<label class="ed"><span>${label}</span><textarea data-path="${p}" rows="${rows}" class="${missCls(v)}">${esc(v)}</textarea></label>`;};
+const inp=(p,label)=>{const v=getP(AI.draft,p)??''; return `<label class="ed">${label?`<span>${label}</span>`:''}<input data-path="${p}" value="${esc(v)}" class="${missCls(v)}"></label>`;};
+const sel=(p,label,opts)=>{const v=getP(AI.draft,p); return `<label class="ed"><span>${label}</span><select data-path="${p}">${opts.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select></label>`;};
+function blocksEd(key){
+  const list=AI.draft[key]||[]; if(!list.length) return '<p class="empty">Nothing here.</p>';
+  return list.map((b,i)=>{const p=`${key}.${i}`;
+    if(b.kind==='text') return ta(`${p}.text`,'Text',6);
+    const typed=b.kind==='table'&&b.cells&&b.cells.length, f=fileByPath(b.file);
+    const ok=b.kind==='figure'?!!(f&&f.url):typed||(b.kind==='chart'?!!chartSeries(b):!!rangeCells(b));
+    let src;
+    if(b.kind==='figure') src=f&&f.url?`<img class="thumb" src="${f.url}" alt=""><div class="src">${esc(f.path)}</div>`:`<div class="src">${esc(b.file)}</div>`;
+    else if(typed) src=`<table class="edt">${b.cells.map((r,ri)=>`<tr>${r.map((c,ci)=>`<td><input data-path="${p}.cells.${ri}.${ci}" value="${esc(c)}" class="${missCls(c)}"></td>`).join('')}</tr>`).join('')}</table>`;
+    else src=`<div class="two">${inp(`${p}.sheet`,'Sheet')}${inp(`${p}.range`,b.kind==='chart'?`Range (X ${esc(b.x_col)}, Y ${esc((b.y_cols||[]).join(', '))})`:'Range')}</div><div class="src">${esc(f?f.path:b.file)}</div>`;
+    return `<div class="blk"><span class="eyebrow">${b.kind}</span>${inp(`${p}.caption`,'Caption')}${src}${ok?'':'<span class="chip crit">Not found in the files</span>'}</div>`;}).join('');
+}
+function editorHtml(){
+  const d=AI.draft, tpl=AI.tpl||REQ.tpl;
+  const sec=(title,inner,open)=>`<details${open||/miss-f|chip crit/.test(inner)?' open':''}><summary>${title}</summary><div class="in">${inner}</div></details>`;   // open where something needs fixing
+  let h=tpl!==REQ.tpl?`<div class="banner">This draft was written for the ${tpl} template. Draft again in step 3 to use the ${REQ.tpl} one.</div>`:'';
+  h+=sec('Test Summary',ta('summary.test_description','Test description')+ta('summary.sample_information','Test sample information',4)+ta('summary.qtp_deviations','QTP deviations')
+    +d.summary.acceptance.map((a,i)=>`<div class="blk">${ta(`summary.acceptance.${i}.criterion`,`Acceptance criterion ${i+1}`)}${sel(`summary.acceptance.${i}.result`,'Pass / Fail',['PASS','FAIL','N/A'])}</div>`).join('')
+    +ta('summary.results_summary','Test results summary',8),true);
+  if(tpl==='complex'){
+    h+=sec('1.1 Samples description',d.samples.map((s,i)=>`<div class="blk two">${inp(`samples.${i}.sn`,'S/N')}${inp(`samples.${i}.pn`,'P/N')}${inp(`samples.${i}.phase`,'Project phase')}${inp(`samples.${i}.drawing_rev`,'Drawing / rev')}${inp(`samples.${i}.description`,'Description')}${inp(`samples.${i}.reception_date`,'Reception date')}</div>`).join('')||'<p class="empty">No samples.</p>');
+    h+=sec('Standards and execution description',ta('standards','Standards (empty: the section is left out)',2)+ta('execution_description','Execution description',8)+blocksEd('execution_blocks'));
+    h+=sec('Instruments and environmental conditions',d.instruments.map((r,i)=>`<div class="blk two">${inp(`instruments.${i}.instrument`,'Instrument')}${inp(`instruments.${i}.characteristic`,'Characteristic of control')}${inp(`instruments.${i}.model_code`,'Model / inventory code')}${inp(`instruments.${i}.manufacturer`,'Manufacturer')}${inp(`instruments.${i}.range`,'Range and units')}<div class="two">${inp(`instruments.${i}.last_revision`,'Last revision')}${inp(`instruments.${i}.next_revision`,'Next revision')}</div></div>`).join('')
+      +`<div class="two">${inp('environment.temperature','Temperature')}${inp('environment.humidity','Humidity')}</div>`);
+  }
+  h+=sec(tpl==='complex'?'2. Results':'Test Results Details',blocksEd('results'));
+  h+=sec(tpl==='complex'?'3. Conclusion':'Conclusions',ta('conclusion','Conclusion',8));
+  if(tpl==='complex') h+=sec('4. Annexes (pictures)',d.annexes.map((a,i)=>`<div class="blk">${inp(`annexes.${i}.title`,'Group title')}<div class="pics">${a.pictures.map((p,j)=>{const f=fileByPath(p.file);
+    return `<figure>${f&&f.url?`<img src="${f.url}" alt="">`:`<div class="nopic">${esc(p.file)}</div>`}${inp(`annexes.${i}.pictures.${j}.caption`,'')}</figure>`;}).join('')}</div></div>`).join('')||'<p class="empty">No pictures.</p>');
+  return h;
+}
+function renderFinal(){
+  const box=$('#final'); $('#s4').classList.toggle('off',!AI.draft);
+  if(!AI.draft){box._d=null; box.innerHTML='<p class="empty">The report appears here as a PDF with the lab template once the AI has drafted it in step 3.</p>'; return;}
+  if(box._d!==AI.draft||box._tpl!==REQ.tpl){
+    box._d=AI.draft; box._tpl=REQ.tpl;
+    box.innerHTML=`<div class="final-bar" id="final-bar"></div><div class="final-grid"><div class="editor" id="editor">${editorHtml()}</div><iframe class="pdf" id="pdf-frame" title="Report PDF"></iframe></div>`;
+    if(PDF.url) $('#pdf-frame').src=PDF.url;
+  }
+  renderFinalBar();
+}
+
+function render(){renderGh(); renderRequest(); renderMeta(); renderFiles(); renderReview(); renderAi(); renderFinal();}
 
 /* ---------- Events ---------- */
 $('#plr').addEventListener('change',e=>setPlr(e.target.value));
 $('#plr').addEventListener('input',e=>{const v=e.target.value.trim().toUpperCase(); if(/^PLR\d{6}$/.test(v)) setPlr(v);});
 document.querySelectorAll('input[name="tpl"]').forEach(r=>r.addEventListener('change',e=>{REQ.tpl=e.target.value; markStale(); render();}));
-document.addEventListener('change',e=>{if(e.target.closest('#qtp-box')&&e.target.type==='checkbox'){e.target.checked?REQ.qtps.add(e.target.value):REQ.qtps.delete(e.target.value); markStale(); render();}});
+document.addEventListener('change',e=>{
+  if(e.target.dataset.solve!=null){const k=+e.target.dataset.solve; e.target.checked?AI.solved.add(k):AI.solved.delete(k); renderReview(); renderFinalBar(); return;}
+  if(e.target.closest('#qtp-box')&&e.target.type==='checkbox'){e.target.checked?REQ.qtps.add(e.target.value):REQ.qtps.delete(e.target.value); prefillMeta(); markStale(); render();}});
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]'); if(a){e.preventDefault(); if(a.dataset.act==='gh') openGh(); if(a.dataset.act==='close-prev'){selFile=null; renderFiles();}
-    if(a.dataset.act==='ai-signin') signIn(); if(a.dataset.act==='ai-draft') draftReport(); if(a.dataset.act==='ai-out') AI.client.auth.signOut(); return;}
+    if(a.dataset.act==='ai-signin') signIn(); if(a.dataset.act==='ai-draft') draftReport(); if(a.dataset.act==='ai-out') AI.client.auth.signOut(); if(a.dataset.act==='finish') clearAll(); return;}
   const r=e.target.closest('[data-file]'); if(r){const i=+r.dataset.file; selFile=selFile===i?null:i; renderFiles();}
 });
-document.addEventListener('input',e=>{if(e.target.id==='ai-answers') AI.answers=e.target.value;});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='ai-answers'){const had=!!AI.answers.trim(); AI.answers=t.value; if(had!==!!AI.answers.trim()) renderAiButton();}
+  if(t.dataset.meta){META[t.dataset.meta]=t.value; META.edited.add(t.dataset.meta); renderReview(); renderFinalBar(); schedulePdf();}
+  if(t.dataset.path&&AI.draft){setP(AI.draft,t.dataset.path,t.value); AI.edited=true; t.classList.toggle('miss-f',/\[MISSING:/.test(t.value)); renderReview(); renderFinalBar(); schedulePdf();}
+});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest&&e.target.closest('[data-file]'); if(r) r.click();}});
 $('#btn-gh').onclick=openGh;
 const q=new URLSearchParams(location.search).get('plr'); if(q){$('#plr').value=q;}
