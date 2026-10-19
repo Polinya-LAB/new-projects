@@ -295,7 +295,7 @@ const statusChip=t=>`<span class="chip ${t.status==='Completed'||t.status==='Rep
 function setPlr(v){
   v=v.trim().toUpperCase(); if(/^\d+$/.test(v)) v='PLR'+v.padStart(6,'0');
   if(v===REQ.plr) return; REQ.plr=v; markStale();
-  const ts=testsOf(v); REQ.qtps=new Set(ts.length===1?[ts[0].qtp]:ts.filter(t=>t.status!=='Cancelled').map(t=>t.qtp));
+  const ts=testsOf(v), first=ts.find(t=>t.status!=='Cancelled')||ts[0]; REQ.qtps=new Set(first?[first.qtp]:[]);   // one report per test line
   prefillMeta(); render();
 }
 function renderRequest(){
@@ -304,8 +304,8 @@ function renderRequest(){
   if(!REQ.plr){box.innerHTML=''; info.innerHTML=''; return;}
   const ts=testsOf(REQ.plr);
   if(!ts.length){box.innerHTML=`<p class="empty" style="margin-top:12px">${esc(REQ.plr)} is not in Control de ensayos.</p>`; info.innerHTML=''; return;}
-  box.innerHTML=`<div class="field" style="margin-top:14px"><label>QTP used (one or more)</label><div class="qtps">${ts.map(t=>`
-    <label class="qtp"><input type="checkbox" value="${esc(t.qtp)}" ${REQ.qtps.has(t.qtp)?'checked':''}>
+  box.innerHTML=`<div class="field" style="margin-top:14px"><label>Test line (QTP)${ts.length>1?' · one report per line: when this one is done, choose the next':''}</label><div class="qtps">${ts.map(t=>`
+    <label class="qtp"><input type="radio" name="qtp" value="${esc(t.qtp)}" ${REQ.qtps.has(t.qtp)?'checked':''}>
     <span><b>${esc(t.qtp)}</b> ${esc(t.title||qtpName(t.qtp)||'')} ${statusChip(t)} ${t.result&&t.result!=='N/A'?`<span class="chip ${t.result==='Pass'?'ok':'crit'}">${esc(t.result)}</span>`:''}</span></label>`).join('')}</div></div>`;
   const sel=chosenTests();
   if(!sel.length){info.innerHTML=''; return;}
@@ -332,6 +332,7 @@ const pad2=n=>String(n).padStart(2,'0');
 const todayStr=()=>{const d=new Date(); return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`;};
 function prefillMeta(){
   if(META.plr!==REQ.plr){META.plr=REQ.plr; META.edited=new Set();}
+  const q=[...REQ.qtps].join(); if(META.qtp!==q){META.qtp=q; META.edited.delete('number'); META.edited.delete('title');}   // new line, new report number and title
   const ts=chosenTests(), f=ts[0]; if(!f) return;
   const auto={number:`QTR${String(f.qtp).replace(/\D/g,'').padStart(4,'0')}-`,date:todayStr(),author:person(f.techId)||f.arasTech||'',
     title:ts.map(t=>t.title||qtpName(t.qtp)).filter(Boolean).join(' / '),project:f.project||''};
@@ -509,7 +510,7 @@ function checks(){
   if(!REQ.plr) return [{sev:'info',title:'Enter the PLR number to start.'}];
   const ts=chosenTests();
   if(DB&&!testsOf(REQ.plr).length) add('crit',`${REQ.plr} is not in Control de ensayos.`,'Check the number, or import the latest ARAS export in Control de ensayos.');
-  if(DB&&testsOf(REQ.plr).length&&!ts.length) add('crit','No QTP selected.','Tick the QTP or QTPs this report covers.');
+  if(DB&&testsOf(REQ.plr).length&&!ts.length) add('crit','No test line selected.','Choose the QTP this report covers in step 1.');
   for(const t of ts){
     const tag=`${t.qtp}:`;
     if(t.status!=='Completed'&&t.status!=='Report') add('warn',`${tag} the test is "${t.status}" in Control de ensayos${t.progress!==''&&t.progress!=null?` (${t.progress}%)`:''}.`,'Finish the test first, or mark it as completed in Control de ensayos if it is already done.');
@@ -533,7 +534,7 @@ function checks(){
     const plrs=new Set(); FILES.forEach(f=>(f.path.toUpperCase().match(/PLR\s?0*\d{4,6}/g)||[]).forEach(m=>plrs.add('PLR'+m.replace(/\D/g,'').padStart(6,'0'))));
     plrs.delete(REQ.plr); if(plrs.size) add('warn',`Some file names mention another request: ${[...plrs].join(', ')}.`,`Check that those files belong to ${REQ.plr} and remove them if not.`);
     const qs=new Set(); FILES.forEach(f=>(f.path.toUpperCase().match(/QTP\s?\d{3,5}/g)||[]).forEach(m=>qs.add('QTP'+m.replace(/\D/g,'').padStart(4,'0'))));
-    const other_q=[...qs].filter(q=>!REQ.qtps.has(q)); if(other_q.length&&ts.length) add('warn',`Some file names mention a QTP not selected: ${other_q.join(', ')}.`,'Tick that QTP in step 1 if this report covers it, or remove those files.');
+    const other_q=[...qs].filter(q=>!REQ.qtps.has(q)); if(other_q.length&&ts.length) add('warn',`Some file names mention another test line: ${other_q.join(', ')}.`,'Each line has its own report. Leave those files out of this one, or use them when you prepare the report of that line.');
   }
   if(ts.length&&!/^QTR\d{3,5}-\d+$/i.test(META.number.trim())) add('crit',`The report number "${META.number}" is not complete.`,`Complete it in step 1 with the report sequence of ${ts[0].qtp}, e.g. QTR${String(ts[0].qtp).replace(/\D/g,'')}-1 for its first report.`);
   if(ts.length&&!/^\d{2}\/\d{2}\/\d{4}$/.test(META.date.trim())) add('warn','The report date is not in the dd/mm/yyyy format.','Correct it in step 1.');
@@ -1076,7 +1077,7 @@ function editorChanged(rebuild){
 }
 function renderFinal(){
   const box=$('#final'); $('#s4').classList.toggle('off',!AI.draft);
-  if(!AI.draft){box._d=null; box.innerHTML='<p class="empty">The report appears here as a PDF with the lab template once the AI has drafted it in step 3.</p>'; return;}
+  if(!AI.draft){box._d=null; box.innerHTML='<p class="empty">The report appears here as a PDF with the lab template once you prepare it in step 3.</p>'; return;}
   if(box._d!==AI.draft||box._tpl!==REQ.tpl){
     box._d=AI.draft; box._tpl=REQ.tpl;
     box.innerHTML=`<div class="final-bar" id="final-bar"></div><div class="final-grid"><div class="editor" id="editor">${editorHtml()}</div><iframe class="pdf" id="pdf-frame" title="Report PDF"></iframe></div>`;
@@ -1101,7 +1102,16 @@ document.addEventListener('change',e=>{
     return editorChanged(true);
   }
   if(e.target.dataset.solve!=null){const k=+e.target.dataset.solve; e.target.checked?AI.solved.add(k):AI.solved.delete(k); renderReview(); renderFinalBar(); return;}
-  if(e.target.closest('#qtp-box')&&e.target.type==='checkbox'){e.target.checked?REQ.qtps.add(e.target.value):REQ.qtps.delete(e.target.value); prefillMeta(); markStale(); render();}});
+  if(e.target.closest('#qtp-box')&&e.target.type==='radio') chooseQtp(e.target.value);});
+/* Another test line is another report: the files stay (the folder may hold both lines), the report of the previous line goes. */
+function chooseQtp(q){
+  if(REQ.qtps.has(q)) return;
+  if(AI.draft&&!confirm(`Start the report of ${q}? The report of ${[...REQ.qtps].join(', ')} will be cleared, so download its PDF first if you need it.`)){render(); return;}
+  REQ.qtps=new Set([q]);
+  if(AI.draft){clearTimeout(PDF.timer); PDF.gen++; if(PDF.url) URL.revokeObjectURL(PDF.url); PDF.url=''; PDF.final=false; PDF.busy=false;
+    Object.assign(AI,{draft:null,tpl:null,source:null,error:'',answers:'',stale:false,edited:false,solved:new Set()});}
+  prefillMeta(); render();
+}
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]'); if(a){e.preventDefault(); if(a.dataset.act==='gh') openGh(); if(a.dataset.act==='close-prev'){selFile=null; renderFiles();}
     if(a.dataset.act==='ai-signin') signIn(); if(a.dataset.act==='ai-draft') draftReport(); if(a.dataset.act==='ai-out') AI.client.auth.signOut(); if(a.dataset.act==='finish') clearAll(); if(a.dataset.act==='local-draft') prepareLocal(); if(a.dataset.act.startsWith('ed-')) editAction(a.dataset.act,a.dataset.arg); return;}
