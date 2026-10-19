@@ -57,10 +57,15 @@ a{color:var(--accent)}
 .tabs button:hover{color:var(--fg)}
 .tabs .n{font-family:var(--f-mono);font-size:11px;background:var(--surface-2);border-radius:8px;padding:0 6px;margin-left:4px;color:var(--muted)}
 .tabs .n.crit{background:var(--crit-soft);color:var(--crit)} .tabs .n.warn{background:var(--warn-soft);color:var(--warn)}
-.store{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:6px 12px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
-.store:hover{border-color:var(--accent)}
-.store i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
-.store.dirty i{background:var(--warn)}
+.gh{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:6px 12px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+.gh:hover{border-color:var(--accent)}
+.gh i{width:8px;height:8px;border-radius:50%;background:var(--st-canc)}
+.gh.on i{background:var(--ok)} .gh.bad i{background:var(--crit)} .gh.busy i{background:var(--warn)}
+.gh.on{color:var(--fg)}
+/* Read-only (not connected, or no write access): editing controls are hidden. */
+body.ro :is([data-act="eq-new"],[data-act="cal-new"],[data-act="cal-plan"],[data-act="ev-new"],[data-act="mt-new"],[data-act="note-done"],[data-act="settings"],[data-act="pt-add"],[data-act="pt-del"],[data-act="res-add"],[data-act="res-del"],[data-act="del"],[data-act="do-import"],[data-dz]){display:none!important}
+body.ro .dlg-f button[type="submit"]:not(.gh-ok){display:none}
+body.ro :is(input[data-tog],select[data-tol]){pointer-events:none;opacity:.6}
 
 main{max-width:1500px;margin:0 auto;padding-block:20px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
 .banner{border:1px solid var(--line);background:var(--surface);border-left:4px solid var(--warn);border-radius:var(--r);padding:10px 14px}
@@ -254,6 +259,77 @@ fieldset.pts{display:block}
 .empty p{margin:0;max-width:62ch;color:var(--muted)}
 @media (max-width:600px){.view-h h2{font-size:22px}.brand h1{font-size:19px}.search{width:100%}.mrow{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.checks{display:grid;gap:4px}
+.res-head,.res-row{display:grid;grid-template-columns:70px repeat(6,minmax(0,1fr)) minmax(0,1.8fr) 30px;gap:5px}
+.res-head{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.res-row{margin-bottom:5px}
+.res-row input,.res-row select{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:5px 6px;min-width:0;width:100%}
+@media (max-width:760px){.res-head{display:none}.res-row{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* Validation sheet: a controlled Fluidra document (paper colours in both themes), printable to PDF.
+   Brand: navy #11156D and blue #5184E4 from the Fluidra · Polinyà Design Center logo; Tahoma body and Arial headings as in the QTP template.
+   Chart series: 2026 #3A45B5 (filled marker), 2025 #5184E4 (hollow marker), validated for colour-vision deficiency. */
+.sheet{--ink:#1A1A1A;--navy:#11156D;--c26:#3A45B5;--c25:#5184E4;--rule:#C9CCD8;--soft:#F2F3F8;--okc:#1E7A46;--okbg:#E3F2E8;--wc:#8A5A00;--wbg:#FBF0D9;--nc:#A8231B;--nbg:#F8E1DE;--gc:#5B6272;
+  background:#fff;color:var(--ink);font-family:Tahoma,"Segoe UI",Arial,sans-serif;font-size:12.5px;line-height:1.4;max-width:1040px;width:100%;margin:0 auto;border:1px solid var(--line);border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.sheet .doc{width:100%;border-collapse:collapse}
+.sheet .doc>thead>tr>td,.sheet .doc>tfoot>tr>td,.sheet .doc>tbody>tr>td{padding:0}
+.sheet .dh{display:grid;grid-template-columns:190px 1fr auto;align-items:center;border-bottom:2px solid var(--navy);padding:14px 22px 10px;gap:16px}
+.sheet .dh img{width:180px;height:auto;display:block}
+.sheet .dh .t b{display:block;font-family:Arial,sans-serif;font-size:17px;color:var(--navy)}
+.sheet .dh .t span{font-size:12px;color:var(--gc)}
+.sheet .dh .meta{font-family:Arial,sans-serif;font-size:11px;text-align:right;color:var(--gc);line-height:1.5}
+.sheet .df{border-top:1px solid var(--rule);padding:8px 22px 10px;font-family:Arial,sans-serif;font-size:10.5px;color:var(--gc);display:flex;flex-wrap:wrap;gap:4px 22px}
+.sheet .df .conf{flex-basis:100%;display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-weight:700;color:var(--navy)}
+.sheet .db{padding:16px 22px 10px}
+.sheet h3{font-family:Arial,sans-serif;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);margin:20px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sheet h3 small{font-size:11px;text-transform:none;letter-spacing:0;color:var(--gc);font-weight:400}
+.sheet .concl{border-left:4px solid var(--navy);background:var(--soft);padding:8px 12px;margin:0 0 4px}
+.sheet .concl b{color:var(--navy)}
+.sheet .kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px 18px;margin:0}
+.sheet .kv div{min-width:0} .sheet .kv dt{font-size:10.5px;color:var(--gc);text-transform:uppercase;letter-spacing:.04em} .sheet .kv dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.sheet .tw{overflow-x:auto}
+.sheet table.t{width:100%;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums}
+.sheet table.t th{background:var(--soft);color:var(--navy);font-family:Arial,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.02em;text-align:right;padding:5px 6px;border-bottom:1px solid var(--rule);vertical-align:bottom;font-weight:700}
+.sheet table.t th.l,.sheet table.t td.l{text-align:left}
+.sheet table.t td{padding:5px 6px;border-bottom:1px solid #E6E8EF;text-align:right;white-space:nowrap}
+.sheet table.t td.l{white-space:normal}
+.sheet .v{display:inline-block;font-family:Arial,sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;white-space:nowrap}
+.sheet .v.ok{background:var(--okbg);color:var(--okc)} .sheet .v.corr{background:#E4E7F8;color:var(--c26)} .sheet .v.b{background:var(--wbg);color:var(--wc)} .sheet .v.nok{background:var(--nbg);color:var(--nc)} .sheet .v.na{background:var(--soft);color:var(--gc)}
+.sheet .bad{color:var(--nc);font-weight:700} .sheet .wn{color:var(--wc);font-weight:700} .sheet .mut{color:var(--gc)}
+.sheet .fn{font-size:10.5px;color:var(--gc);margin:6px 0 0}
+.sheet .rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sheet .rules div{border:1px solid var(--rule);border-radius:4px;padding:8px 10px;font-size:11.5px}
+.sheet .rules b{display:block;color:var(--navy);font-family:Arial,sans-serif;font-size:11.5px;margin-bottom:2px}
+.sheet .acts{margin:0;padding-left:18px;display:grid;gap:5px}
+.sheet .acts .ref{font-family:Arial,sans-serif;font-size:10px;color:var(--gc);margin-left:6px;white-space:nowrap}
+.sheet .charts{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.sheet .chart svg{width:100%;height:auto;display:block}
+.sheet .chart .ct{font-family:Arial,sans-serif;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.sheet .lg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:11px;color:var(--gc);align-items:center;margin-top:6px}
+.sheet .lg svg{vertical-align:middle;margin-right:5px}
+.sheet .sig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0}
+.sheet .sig div{border:1px solid var(--rule);border-radius:4px;padding:8px 10px;min-height:58px}
+.sheet .sig dt{font-size:10.5px;color:var(--gc);text-transform:uppercase} .sheet .sig dd{margin:2px 0 0;font-weight:700}
+.sheet .iso{columns:2;column-gap:28px;font-size:11px;margin:0;padding-left:16px}
+.sheet .iso li{break-inside:avoid;margin-bottom:3px}
+@media (max-width:760px){.sheet .dh{grid-template-columns:1fr}.sheet .dh .meta{text-align:left}.sheet .kv{grid-template-columns:1fr 1fr}.sheet .rules,.sheet .sig{grid-template-columns:1fr}.sheet .iso{columns:1}.sheet .db{padding:12px}}
+/* On screen the document table is plain blocks so wide tables scroll inside .tw; in print it stays a table so header and footer repeat on every page. */
+@media screen{.sheet .doc{display:flex;flex-direction:column}.sheet .doc>*,.sheet .doc>*>tr,.sheet .doc>*>tr>td{display:block;min-width:0}.sheet .doc>tfoot{order:2}}
+main{grid-template-columns:minmax(0,1fr)}  /* the sheet's wide tables scroll inside it instead of widening the page */
+@page{size:A4;margin:10mm 9mm 12mm;@bottom-right{content:"Page " counter(page) " of " counter(pages);font:9px Arial,sans-serif;color:#5B6272}}
+@media print{
+  :root{color-scheme:light}
+  body{background:#fff}
+  .top,#toast,.no-print,.banner,dialog{display:none!important}
+  main{padding:0!important;max-width:none;display:block}
+  .sheet{border:0;box-shadow:none;max-width:none;font-size:10.5px}
+  .sheet .dh{padding:0 0 8px} .sheet .db{padding:8px 0 4px} .sheet .df{padding:6px 0 0}
+  .sheet table.t{font-size:9.5px} .sheet table.t th{font-size:8.5px} .sheet table.t td,.sheet table.t th{padding:3px 4px}
+  .sheet .tw{overflow:visible}
+  .sheet h3,.sheet table.t tr,.sheet .chart,.sheet .rules,.sheet .sig,.sheet .concl{break-inside:avoid}
+  .sheet h3{break-after:avoid}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 </style>
 </head>
 <body>
@@ -261,7 +337,7 @@ fieldset.pts{display:block}
 <header class="top">
   <div class="top-in">
     <div class="brand"><a class="home" href="../">← Laboratorio Polinyà</a><div class="row1"><h1>Calibration Plan</h1><span class="tag" id="form-tag">F-IM-FM-001</span></div></div>
-    <button type="button" class="store" id="btn-store" data-view="data"><i></i><span>Saved in this browser</span></button>
+    <button type="button" class="gh" id="btn-gh" data-act="gh"><i></i><span>Connect GitHub</span></button>
     <button class="btn primary" data-act="eq-new">+ New equipment</button>
     <nav class="tabs" id="tabs" aria-label="Views"></nav>
   </div>
@@ -272,14 +348,28 @@ fieldset.pts{display:block}
 <div id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- Data bundled next to the page, so it also opens with a double click (file://), where fetch() is blocked. -->
-<script src="data/calibraciones.js"></script>
+<script>/* Local test mode (development only): opened as a file or with ?local, the page loads local-data.js, which is not in the
+   repository, and keeps changes in this browser instead of saving them to GitHub. */
+if(location.protocol==='file:'||/[?&]local\b/.test(location.search)) document.write('<script src="local-data.js"><\/script>');</script>
 <script>
 /* ---------- Constants ---------- */
 const GROUPS=['Test equipment','Auxiliary equipment'];
 const MODES=['Periodic','Expiry date','Before use','Not required'];
 const STATES=['In use','Out of service','Retired','Reserved'];
-const VIEWS=[['overview','Overview'],['equipment','Equipment'],['plan','Annual plan'],['calibrations','Calibrations'],['evaluation','TU evaluation'],['maintenance','Maintenance'],['review','Data review'],['data','Import & data']];
+const VIEWS=[['overview','Overview'],['equipment','Equipment'],['plan','Annual plan'],['calibrations','Calibrations'],['evaluation','TU evaluation'],['sheets','Validation sheets'],['maintenance','Maintenance'],['review','Data review'],['data','Import & data']];
+/* Test standards a chamber can be validated for: tolerance per quantity and the test conditions (severities) the calibration must cover.
+   T:'cold' = any point ≤ 0 ºC, 'heat' = any point > 30 ºC, 'ends' = lowest and highest point; ramp = rate of change, not verifiable at fixed points. */
+const STANDARDS={
+  'ISO 9227':{title:'Salt spray tests (NSS, AASS, CASS)',tol:{T:2},sev:[{label:'NSS / AASS · 35 ºC',T:35},{label:'CASS · 50 ºC',T:50,optional:true}]},
+  'IEC 60068-2-1':{title:'Test A: Cold',tol:{T:2},sev:[{label:'Cold severities (≤ 0 ºC)',T:'cold'}]},
+  'IEC 60068-2-2':{title:'Test B: Dry heat',tol:{T:2},sev:[{label:'Dry heat severities (> 30 ºC)',T:'heat'}]},
+  'IEC 60068-2-14 Nb':{title:'Test Nb: Change of temperature, specified rate',tol:{T:2},sev:[{label:'Lower and upper temperatures',T:'ends'},{label:'Rate of change (1, 3 or 5 K/min ± 20 %)',ramp:true}]},
+  'IEC 60068-2-78':{title:'Test Cab: Damp heat, steady state',tol:{T:2,RH:3},sev:[{label:'40 ºC / 93 %RH',T:40,RH:93}]},
+  'IEC 60068-2-30':{title:'Test Db: Damp heat, cyclic',tol:{T:2,RH:3},sev:[{label:'Upper phase 40 ºC / 93 %RH',T:40,RH:93},{label:'Upper phase 55 ºC / 93 %RH (variant 2)',T:55,RH:93,optional:true},{label:'Lower phase 25 ºC / ≥ 95 %RH',T:25,RH:95}]},
+};
+const QU={T:'ºC',RH:'%RH'};
+const V_RANK={ok:0,corr:1,b:2,nok:3,na:4};
+const V_LABEL={ok:'Conforming',corr:'Conforming with correction',b:'Simple acceptance only',nok:'Not conforming',na:'Not calibrated'};
 const DEFAULT_CFG={warnMonths:2,
   certBase:'https://fluidra.sharepoint.com/sites/127-RDCenterPolinya-SPO2/Shared%20Documents/07.%20Laboratory/4.%20Equipment/2.%20Calibration/',
   certPath:'0.%20Certificados/Equipos/{code}/Actuales',formCode:'F-IM-FM-001',formRev:'rev.1 · 16/04/2026'};
@@ -300,7 +390,7 @@ const MT_TYPES=['Preventive','Corrective','Verification'];
 
 /* ---------- State ---------- */
 const S={view:'overview',q:'',cfg:{...DEFAULT_CFG},f:{group:'',status:'',lab:''},sort:{eq:{k:'code',dir:1}},
-  plan:{start:null,span:24,all:false},calf:{status:'',year:''},imp:null,load:null};
+  plan:{start:null,span:24,all:false},calf:{status:'',year:''},imp:null,load:null,sheet:null};
 try{const v=localStorage.getItem('cal.view'); if(VIEWS.some(x=>x[0]===v)) S.view=v; const sp=+localStorage.getItem('cal.span'); if(sp===12||sp===24) S.plan.span=sp;}catch(e){}
 if(location.hash&&VIEWS.some(x=>'#'+x[0]===location.hash)) S.view=location.hash.slice(1);
 let DATA=null, IX=null;
@@ -419,6 +509,19 @@ function buildIndex(){
 
 /* ---------- Render ---------- */
 function render(){
+  let banner='';
+  if(PREVIEW&&DATA) banner=`<div class="banner no-print"><b>Preview version.</b> It shows the real data from <span class="mono">lab-data</span>, but changes are not saved to GitHub: they stay in this page until you reload it.</div>`;
+  else if(LOCAL) banner=`<div class="banner no-print"><b>Local test mode.</b> The data comes from <span class="mono">local-data.js</span>, which is not in the repository; changes stay in this browser and are never sent to GitHub. <button class="link" data-act="local-reset">Reset the test data</button></div>`;
+  else if(S.noDb) banner=S.privateData
+    ? (GH.login
+      ? `<div class="banner crit"><b>Your account ${esc(GH.login)} cannot see the calibration data.</b> Ask the owner to add you to the private repository <span class="mono">${REPO.owner}/${REPO.repo}</span>.</div>`
+      : `<div class="banner crit"><b>The calibration data is private.</b> Press <button class="link" data-act="gh">Connect GitHub</button> with an account that has access to see it.</div>`)
+    : `<div class="banner crit"><b>Could not load the calibration data from GitHub.</b> Check your connection and reload the page.</div>`;
+  else if(GH.invalid) banner=`<div class="banner crit">Your GitHub key is no longer valid or has expired. <button class="link" data-act="gh">Connect GitHub</button> and paste a new one.</div>`;
+  else if(GH.login&&!GH.push) banner=`<div class="banner">Your GitHub account <b>${esc(GH.login)}</b> cannot edit this repository. Ask to be added as a collaborator with the Write role.</div>`;
+  else if(S.ro) banner=`<div class="banner">Read-only. To register or change calibrations, <button class="link" data-act="gh">connect GitHub</button> with an account that has write access to the repository.</div>`;
+  renderGh();
+  if(!DATA){$('#tabs').innerHTML=''; $('#view').innerHTML=banner+(S.noDb?'':'<div class="empty"><h3>Loading calibration data…</h3></div>'); return;}
   buildIndex();
   S.cfg={...DEFAULT_CFG,...((DATA.config||{}).settings||{})};
   $('#form-tag').textContent=S.cfg.formCode||'F-IM-FM-001';
@@ -427,9 +530,8 @@ function render(){
   const nIss=IX.eqs.reduce((n,e)=>n+IX.issues.get(e.id).filter(i=>i.sev==='warn').length,0);
   const mDue=IX.eqs.filter(e=>['overdue','soon'].includes(IX.maint.get(e.id).key)).length;
   $('#tabs').innerHTML=VIEWS.map(([k,l])=>`<button data-view="${k}" ${S.view===k?'aria-current="page"':''}>${l}${k==='overview'&&act.length?`<span class="n ${crit?'crit':'warn'}">${act.length}</span>`:''}${k==='review'&&nIss?`<span class="n warn">${nIss}</span>`:''}${k==='maintenance'&&mDue?`<span class="n warn">${mDue}</span>`:''}</button>`).join('');
-  renderStore();
-  const fn={overview:vOverview,equipment:vEquipment,plan:vPlan,calibrations:vCalibrations,evaluation:vEvaluation,maintenance:vMaintenance,review:vReview,data:vData}[S.view]||vOverview;
-  $('#view').innerHTML=fn();
+  const fn={overview:vOverview,equipment:vEquipment,plan:vPlan,calibrations:vCalibrations,evaluation:vEvaluation,sheets:vSheets,maintenance:vMaintenance,review:vReview,data:vData}[S.view]||vOverview;
+  $('#view').innerHTML=banner+fn();
 }
 function emptyState(){
   return `<div class="empty"><p class="eyebrow">No equipment yet</p><h3>Import the calibration plan Excel to get started</h3>
@@ -623,6 +725,182 @@ function vEvaluation(){
   <tbody>${rows||'<tr><td colspan="11" class="muted">No evaluations yet.</td></tr>'}</tbody></table></div>`;
 }
 
+/* ---------- Validation sheets ----------
+   One controlled sheet per chamber: the last two certificates compared point by point against the tolerance of the test standards it is used for.
+   e = mean − nominal; drift = how much |e| grew since the previous certificate (0 if it decreased).
+   Rule A (guard band, ILAC-G8): |e| + U ≤ TU.  Rule B (simple acceptance): |e| ≤ TU.
+   With a setpoint correction of −e (ISO/IEC 17025 §6.4.11) the error expected until the next calibration is the drift, so A becomes U + drift ≤ TU. */
+const DRIFT_WARN=0.25;  // drift above this share of TU asks for intermediate checks or a shorter interval
+const EPS=1e-9;
+const fx=(v,d=2)=>v==null||!isFinite(v)?'—':(v<0?'−':'')+Math.abs(v).toFixed(d);
+const fsg=(v,d=2)=>v==null||!isFinite(v)?'—':(v>0?'+':v<0?'−':'±')+Math.abs(v).toFixed(d);
+const yearOf=c=>c?String(c.month||'').slice(0,4):'';
+function planTol(e,q){
+  const re=q==='RH'?/±\s*(\d+(?:[.,]\d+)?)\s*%\s*(?:RH|HR)/i:/±\s*(\d+(?:[.,]\d+)?)\s*(?:º|°)\s*C/i;
+  for(const p of e.points||[]){const m=String(p.tolerance||'').match(re); if(m) return parseFloat(m[1].replace(',','.'));}
+  return null;
+}
+/* TU of a quantity: the tightest tolerance among the standards the equipment is used for; without standards, the plan tolerance. */
+function eqTU(e,q){
+  const tols=((e.validation||{}).standards||[]).map(k=>STANDARDS[k]).filter(s=>s&&s.tol[q]!=null).map(s=>s.tol[q]);
+  if(tols.length) return {tu:Math.min(...tols),src:'standard'};
+  const p=planTol(e,q); return {tu:p,src:p==null?'':'plan'};
+}
+const ptKey=r=>r.q==='RH'?`RH${num(r.nominal)}@${num(r.atT)}`:`T${num(r.nominal)}`;
+const ptLabel=r=>r.q==='RH'?`${fmtNum(num(r.nominal))} %RH at ${fmtNum(num(r.atT))} ºC`:`${fmtNum(num(r.nominal))} ºC`;
+function judge(x,T){
+  if(T==null||x.e1==null||x.U==null) return {passA:false,passB:false,passC:false,v:'na'};
+  const passA=x.A<=T+EPS, passB=Math.abs(x.e1)<=T+EPS, passC=x.C<=T+EPS;
+  return {passA,passB,passC,v:passA?'ok':passC?'corr':passB?'b':'nok'};
+}
+function sheetData(e){
+  const done=(IX.recs.get(e.id)||[]).filter(c=>c.status==='Done'&&(c.results||[]).length);
+  const cur=done[done.length-1]||null, prev=done[done.length-2]||null;
+  const stds=((e.validation||{}).standards||[]).filter(k=>STANDARDS[k]);
+  const tu={T:eqTU(e,'T'),RH:eqTU(e,'RH')};
+  const prevBy=new Map((prev?prev.results:[]).map(r=>[ptKey(r),r]));
+  const rows=(cur?cur.results:[]).map(r=>{
+    const nom=num(r.nominal), mean=num(r.mean), U=num(r.U), p=prevBy.get(ptKey(r)), pm=p?num(p.mean):null;
+    const e1=mean!=null&&nom!=null?mean-nom:null, e0=pm!=null&&nom!=null?pm-nom:null;
+    const drift=e1!=null&&e0!=null?Math.max(0,Math.abs(e1)-Math.abs(e0)):null;
+    const x={r,q:r.q,key:ptKey(r),label:ptLabel(r),nom,atT:num(r.atT),e1,e0,drift,U,U0:p?num(p.U):null,
+      A:e1!=null&&U!=null?Math.abs(e1)+U:null,C:U!=null?U+(drift||0):null,corr:e1==null?null:-e1,
+      stab:num(r.stab),unif:num(r.unif),zones:(r.zones||[]).map(num),pz:p&&(p.zones||[]).length===(r.zones||[]).length?p.zones.map(num):[],hasPrev:!!p};  // positions are compared only when both certificates measured the same number
+    x.T=tu[r.q].tu; Object.assign(x,judge(x,x.T));
+    x.zOut=x.zones.map((z,i)=>z!=null&&x.T!=null&&Math.abs(z-nom)>x.T+EPS?i:-1).filter(i=>i>=0);
+    return x;
+  });
+  const lost=prev?prev.results.filter(r=>!rows.some(x=>x.key===ptKey(r))):[];
+  /* Severities each standard needs, matched to the calibrated points (±1 of the nominal). */
+  const near=(a,b)=>a!=null&&b!=null&&Math.abs(a-b)<=1;
+  const Tp=rows.filter(x=>x.q==='T'), Hp=rows.filter(x=>x.q==='RH');
+  const lo=Tp.length?Math.min(...Tp.map(x=>x.nom)):null, hi=Tp.length?Math.max(...Tp.map(x=>x.nom)):null;
+  const std=stds.map(k=>{
+    const s=STANDARDS[k], sev=s.sev.map(v=>{
+      if(v.ramp) return {...v,pts:[],missing:[],ramp:true};
+      let pts=[], missing=[];
+      if(v.T==='cold'){pts=Tp.filter(x=>x.nom<=0); if(!pts.length) missing.push('a point ≤ 0 ºC');}
+      else if(v.T==='heat'){pts=Tp.filter(x=>x.nom>30); if(!pts.length) missing.push('a point > 30 ºC');}
+      else if(v.T==='ends'){pts=Tp.filter(x=>x.nom===lo||x.nom===hi); if(pts.length<2) missing.push('the lowest and highest temperatures');}
+      else{const t=Tp.find(x=>near(x.nom,v.T)); if(t) pts.push(t); else missing.push(`${v.T} ºC`);
+        if(v.RH!=null){const h=Hp.find(x=>near(x.nom,v.RH)&&near(x.atT,v.T)); if(h) pts.push(h); else missing.push(`${v.RH} %RH at ${v.T} ºC`);}}
+      return {...v,pts,missing};
+    });
+    const pts=[...new Set(sev.flatMap(v=>v.pts))].map(x=>({x,...judge(x,s.tol[x.q])}));
+    const worst=pts.reduce((w,p)=>V_RANK[p.v]>V_RANK[w]?p.v:w,'ok');
+    return {k,s,sev,pts,v:pts.length?worst:'na',allA:pts.length&&pts.every(p=>p.passA),allC:pts.length&&pts.every(p=>p.passA||p.passC),allB:pts.length&&pts.every(p=>p.passB),
+      gaps:sev.filter(v=>v.missing.length&&!v.optional),optGaps:sev.filter(v=>v.missing.length&&v.optional),ramp:sev.some(v=>v.ramp)};
+  });
+  return {cur,prev,stds,tu,rows,lost,std,Tp,Hp,y1:yearOf(cur),y0:yearOf(prev)};
+}
+function sheetActions(e,d){
+  const out=[], add=(text,ref)=>out.push({text,ref}), u=q=>QU[q], y0=d.y0||'previous';
+  for(const x of d.rows.filter(x=>x.v==='corr')) add(`<b>${x.label}</b>: apply a setpoint correction of <b>${fsg(x.corr)} ${u(x.q)}</b> (set ${fx(x.nom+x.corr,2)} ${u(x.q)} to obtain ${fmtNum(x.nom)} ${u(x.q)}) and record it in the test instructions. Rule A is then met: U + drift = ${fx(x.C)} ≤ ${fmtNum(x.T)} ${u(x.q)}.`,'§6.4.11');
+  for(const x of d.rows.filter(x=>x.v==='nok')) add(`<b>${x.label}</b> is out of tolerance even with a correction (|e| = ${fx(Math.abs(x.e1))}, U + drift = ${fx(x.C)} > ${fmtNum(x.T)} ${u(x.q)}). Do not use the chamber at this point; review the tests run since the last calibration.`,'§6.4.9 · §7.10');
+  for(const x of d.rows.filter(x=>x.drift!=null&&x.T!=null&&x.drift>DRIFT_WARN*x.T+EPS)) add(`<b>${x.label}</b>: the error grew ${fx(x.drift)} ${u(x.q)} since ${y0} (more than ${DRIFT_WARN*100} % of TU). Add an intermediate check or shorten the calibration interval.`,'§6.4.7 · §6.4.10 · §8.5');
+  for(const x of d.rows.filter(x=>x.zOut.length)){
+    const pos=x.zOut.map(i=>{const again=x.pz[i]!=null&&Math.abs(x.pz[i]-x.nom)>x.T+EPS; return `P${i+1} at ${fx(x.zones[i])} ${u(x.q)} (e ${fsg(x.zones[i]-x.nom)})${again?`, also outside in ${y0} (${fx(x.pz[i])} ${u(x.q)}, e ${fsg(x.pz[i]-x.nom)})`:''}`;});
+    add(`<b>${x.label}</b>: position ${pos.join('; ')} is outside ±${fmtNum(x.T)} ${u(x.q)}. Exclude it from the useful zone or check the air circulation and door seal; with the correction the mean is centred but the spread stays.`,'§6.4.5');
+  }
+  for(const q of ['T','RH']){const xs=d.rows.filter(x=>x.q===q&&x.T!=null&&x.U!=null&&x.U>=x.T-EPS);
+    if(xs.length) add(`${q==='RH'?'Humidity':'Temperature'}: the certificate uncertainty (U up to ${fx(Math.max(...xs.map(x=>x.U)),1)} ${u(q)}) is not smaller than TU ±${fmtNum(xs[0].T)} ${u(q)}, so rule A cannot be met even after a correction. Decide the decision rule (simple acceptance, rule B, or a tolerance agreed with the test requester) or ask the lab for a lower-uncertainty method.`,'§7.1.3 · §7.8.6 · ILAC-G8');}
+  const gap=new Map(); for(const s of d.std) for(const v of s.gaps) gap.set(`${s.k}|${v.label}`,{s,v});
+  for(const {s,v} of gap.values()) add(`${esc(s.k)} · ${esc(v.label)}: not covered by the calibration (missing ${esc(v.missing.join(' and '))}). Add the point at the next calibration${IX.info.get(e.id).planned?` (planned ${fmtM(IX.info.get(e.id).planned.month)})`:''}, or do not use the chamber for this severity.`,'§6.4.6 · §6.4.7');
+  if(d.std.some(s=>s.ramp)) add('IEC 60068-2-14 Nb: the rate of temperature change is not in the certificate. Verify it with a logged ramp before use (1, 3 or 5 K/min ± 20 %, measured in the useful zone).','§6.4.4 · §6.4.10');
+  for(const q of ['T','RH']){const tp=planTol(e,q), ts=d.tu[q].tu; if(d.tu[q].src==='standard'&&tp!=null&&Math.abs(tp-ts)>EPS&&d.rows.some(x=>x.q===q)) add(`The plan tolerance for ${q==='RH'?'humidity':'temperature'} (±${fmtNum(tp)} ${u(q)}) is not the standards' tolerance (±${fmtNum(ts)} ${u(q)}). Use one acceptance criterion in the calibration plan.`,'§6.4.13');}
+  if(d.cur&&d.prev&&+d.cur.zonesN&&+d.prev.zonesN&&+d.cur.zonesN!==+d.prev.zonesN) add(`The number of positions changed (${d.prev.zonesN} → ${d.cur.zonesN}): uniformity and uncertainty are not directly comparable between certificates.`,'§7.6');
+  for(const r of d.lost) add(`${ptLabel(r)} was calibrated in ${y0} but is not in the ${d.y1} certificate.`,'§6.4.7');
+  if(!d.prev) add('There is only one certificate with results: the drift cannot be evaluated until the next calibration.','§6.4.7');
+  return out;
+}
+function niceTicks(lo,hi,n=5){
+  const span=hi-lo||1, raw=span/n, mag=Math.pow(10,Math.floor(Math.log10(raw))), st=[1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw)||raw;
+  const a=Math.floor(lo/st)*st, b=Math.ceil(hi/st)*st, out=[]; for(let v=a;v<=b+st/2;v+=st) out.push(+v.toFixed(6)); return out;
+}
+/* Error per point with U as error bars, inside the ±TU band. The previous certificate is a hollow marker, the current one a filled marker. */
+function errChart(rows,q,T,y0,y1){
+  if(!rows.length) return '';
+  const W=480,H=230,m={l:46,r:12,t:12,b:40}, iw=W-m.l-m.r, ih=H-m.t-m.b, u=QU[q];
+  const vals=[T!=null?T:0,T!=null?-T:0]; for(const x of rows){ if(x.e1!=null) vals.push(x.e1+(x.U||0),x.e1-(x.U||0)); if(x.e0!=null) vals.push(x.e0+(x.U0||0),x.e0-(x.U0||0)); }
+  const ticks=niceTicks(Math.min(...vals),Math.max(...vals)), y0v=ticks[0], y1v=ticks[ticks.length-1];
+  const Y=v=>m.t+ih-(v-y0v)/(y1v-y0v)*ih, bw=iw/rows.length, X=i=>m.l+bw*(i+.5);
+  const grid=ticks.map(t=>`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="${t===0?'#9AA0AE':'#E6E8EF'}" stroke-width="1"/><text x="${m.l-6}" y="${Y(t)+3.5}" text-anchor="end" font-size="10" fill="#5B6272">${fx(t,Math.abs(t)%1?1:0)}</text>`).join('');
+  const band=T!=null?`<rect x="${m.l}" y="${Y(T)}" width="${iw}" height="${Y(-T)-Y(T)}" fill="#EEF0F8"/><line x1="${m.l}" x2="${W-m.r}" y1="${Y(T)}" y2="${Y(T)}" stroke="#8C93A6" stroke-dasharray="4 3"/><line x1="${m.l}" x2="${W-m.r}" y1="${Y(-T)}" y2="${Y(-T)}" stroke="#8C93A6" stroke-dasharray="4 3"/><text x="${W-m.r-4}" y="${Y(T)-4}" text-anchor="end" font-size="10" fill="#5B6272">+TU ${fmtNum(T)}</text><text x="${W-m.r-4}" y="${Y(-T)+12}" text-anchor="end" font-size="10" fill="#5B6272">−TU</text>`:'';
+  const mark=(i,e,U,dx,filled,yr,x)=>{ if(e==null) return ''; const cx=X(i)+dx, c=filled?'#3A45B5':'#5184E4';
+    const bar=U!=null?`<line x1="${cx}" x2="${cx}" y1="${Y(e+U)}" y2="${Y(e-U)}" stroke="${c}" stroke-width="1.5"/><line x1="${cx-4}" x2="${cx+4}" y1="${Y(e+U)}" y2="${Y(e+U)}" stroke="${c}" stroke-width="1.5"/><line x1="${cx-4}" x2="${cx+4}" y1="${Y(e-U)}" y2="${Y(e-U)}" stroke="${c}" stroke-width="1.5"/>`:'';
+    const dot=filled?`<circle cx="${cx}" cy="${Y(e)}" r="5" fill="${c}" stroke="#fff" stroke-width="2"/>`:`<circle cx="${cx}" cy="${Y(e)}" r="4.5" fill="#fff" stroke="${c}" stroke-width="2"/>`;
+    return `<g>${bar}${dot}<circle cx="${cx}" cy="${Y(e)}" r="11" fill="transparent"><title>${x.label} · ${yr}: e ${fsg(e)} ${u}, U ${fx(U)} ${u} → |e|+U ${fx(Math.abs(e)+(U||0))}</title></circle></g>`;};
+  const marks=rows.map((x,i)=>mark(i,x.e0,x.U0,-9,false,y0,x)+mark(i,x.e1,x.U,9,true,y1,x)).join('');
+  const xl=rows.map((x,i)=>`<text x="${X(i)}" y="${H-m.b+16}" text-anchor="middle" font-size="10.5" fill="#1A1A1A">${q==='RH'?`${fmtNum(x.nom)} %`:`${fmtNum(x.nom)} ºC`}</text>${q==='RH'?`<text x="${X(i)}" y="${H-m.b+29}" text-anchor="middle" font-size="9.5" fill="#5B6272">at ${fmtNum(x.atT)} ºC</text>`:''}`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${q==='RH'?'Humidity':'Temperature'} error per point, ${y0||''} and ${y1}"><text x="12" y="${m.t+ih/2}" transform="rotate(-90 12 ${m.t+ih/2})" text-anchor="middle" font-size="10" fill="#5B6272">e (${u})</text>${band}${grid}${marks}${xl}</svg>`;
+}
+const legendHtml=(y0,y1)=>`<div class="lg">${y0?`<span><svg width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="#fff" stroke="#5184E4" stroke-width="2"/></svg>${esc(y0)}</span>`:''}<span><svg width="14" height="14"><circle cx="7" cy="7" r="5" fill="#3A45B5"/></svg>${esc(y1)}</span><span><svg width="18" height="12"><rect width="18" height="12" fill="#EEF0F8" stroke="#8C93A6" stroke-dasharray="3 2"/></svg>±TU</span><span>Bars: U (k=2)</span></div>`;
+const vTag=v=>`<span class="v ${v}">${V_LABEL[v]}</span>`;
+const yn=(ok,na)=>na?'<span class="mut">—</span>':ok?'Yes':'<span class="bad">No</span>';
+
+function vSheets(){
+  const cands=IX.eqs.filter(e=>((e.validation||{}).standards||[]).length||(IX.recs.get(e.id)||[]).some(c=>(c.results||[]).length));
+  if(!cands.length) return `<div class="view-h"><h2>Validation sheets</h2></div><div class="empty"><h3>No validation sheets yet</h3><p>Open a chamber in <b>Equipment</b>, tick the test standards it is used for under <b>Validation</b>, and enter the certificate results when you register its calibration.</p></div>`;
+  if(!cands.some(e=>e.id===S.sheet)) S.sheet=cands[0].id;
+  const e=eqById(S.sheet);
+  return `<div class="view-h no-print"><h2>Validation sheets</h2><select class="fsel" id="sheet-pick" aria-label="Equipment">${cands.map(x=>`<option value="${esc(x.id)}" ${x.id===e.id?'selected':''}>${esc(x.code)} · ${esc(x.description||'')}</option>`).join('')}</select><button class="btn" data-act="eq" data-id="${esc(e.id)}">Edit equipment</button><button class="btn primary" data-act="print">Print / PDF</button></div>
+  <p class="note no-print">The sheet is calculated from the results of the last two certificates and the test standards set in the equipment. Draft: the form code and the signatures are still pending.</p>
+  ${sheetHtml(e)}`;
+}
+function sheetHtml(e){
+  const d=sheetData(e), v=e.validation||{}, info=IX.info.get(e.id), today=fmtD(todayIso()), {y0,y1}=d;
+  const acts=sheetActions(e,d), byQ=q=>d.rows.filter(x=>x.q===q), qName={T:'Temperature',RH:'Humidity'};
+  const head=`<div class="dh"><img src="img/fluidra-polinya.png" alt="Fluidra · Polinyà Design Center"><div class="t"><b>Equipment validation sheet</b><span>${esc(e.code)} · ${esc(e.description||'')}</span></div><div class="meta">Form: <b>pending</b><br>Version 0 · draft<br>Generated ${today}</div></div>`;
+  const foot=`<div class="df"><span>Doc. nº ${esc(e.code)}-VAL</span><span>Issued by: <b>pending</b></span><span>Approved by: <b>pending</b></span><span>Version: 0 (draft)</span><span>Date: ${today}</span><div class="conf"><span>Fluidra Confidential</span><span>HARDCOPIES OF THIS DOCUMENT ARE UNCONTROLLED</span></div></div>`;
+  if(!d.cur) return `<article class="sheet"><table class="doc"><thead><tr><td>${head}</td></tr></thead><tfoot><tr><td>${foot}</td></tr></tfoot><tbody><tr><td><div class="db"><div class="concl">No certificate results yet. Register the calibration of ${esc(e.code)} and enter the results of each point (mean, U, stability, uniformity and positions).</div></div></td></tr></tbody></table></article>`;
+  /* Conclusion: one line per quantity and the severities not covered. */
+  const qLine=q=>{const xs=byQ(q); if(!xs.length) return ''; const c=k=>xs.filter(x=>x.v===k);
+    const part=[c('ok').length&&`${c('ok').length} of ${xs.length} points conform as calibrated (rule A)`,c('corr').length&&`${c('corr').map(x=>x.label).join(', ')} conform${c('corr').length===1?'s':''} with a setpoint correction`,c('b').length&&`${c('b').length===xs.length?'all points':c('b').map(x=>x.label).join(', ')} pass only simple acceptance (rule B)`,c('nok').length&&`<span class="bad">${c('nok').map(x=>x.label).join(', ')} not conforming</span>`].filter(Boolean);
+    return `<li><b>${qName[q]}</b> (TU ±${fmtNum(xs[0].T)} ${QU[q]}): ${part.join('; ')}.</li>`;};
+  const gaps=d.std.flatMap(s=>s.gaps.map(g=>`${s.k} ${g.label}`));
+  const worst=d.rows.reduce((w,x)=>V_RANK[x.v]>V_RANK[w]?x.v:w,'ok');
+  const concl=`<div class="concl"><b>Result: ${V_LABEL[worst]}</b>${gaps.length?' · some severities not verified':''}<ul style="margin:4px 0 0;padding-left:18px">${qLine('T')}${qLine('RH')}${gaps.length?`<li><b>Not covered by the calibration:</b> ${esc(gaps.join('; '))}.</li>`:''}${byQ('RH').some(x=>x.v==='b')?'<li>The decision rule for humidity is still to be decided; the sheet shows both rules.</li>':''}</ul></div>`;
+  const kv=(k,val)=>`<div><dt>${k}</dt><dd>${val||'—'}</dd></div>`;
+  const certTxt=c=>c?`${esc(c.certRef||'—')} · ${fmtM(c.month)}${c.lab?` · ${esc(c.lab)}`:''}`:'—';
+  const eqBox=`<dl class="kv">${kv('Code',esc(e.code))}${kv('Description',esc(e.description))}${kv('Brand / model',esc([e.brand,e.model].filter(Boolean).join(' · ')))}${kv('Serial number',esc(e.serial))}
+    ${kv('Validated range',esc(v.range||(e.points||[]).map(p=>p.range).filter(Boolean).join('; ')))}${kv('Useful zone',esc(v.usefulZone))}${kv('Volume',esc(v.volume))}${kv('Feed-throughs',esc(v.feedthroughs))}
+    ${kv(`Current certificate (${y1})`,certTxt(d.cur))}${kv(`Previous certificate${y0?` (${y0})`:''}`,certTxt(d.prev))}${kv('Traceability',e.enac==='Yes'?'ENAC accredited (ILAC MRA)':e.enac==='No'?'Not accredited':'To define')}${kv('Interval · next',`${perLabel(+e.periodMonths)} · ${fmtM(info.due)}`)}
+    ${kv('Positions measured',esc(d.cur.zonesN||(d.rows[0]?d.rows[0].zones.length:'')))}${kv('Status in the plan',esc(calLabel(e,info)))}</dl>`;
+  const stdRows=d.std.map(s=>{
+    const tol=Object.entries(s.s.tol).map(([q,t])=>`±${fmtNum(t)} ${QU[q]}`).join(' · '), cov=s.sev.map(v=>v.ramp?`<span class="wn">${esc(v.label)}: internal check</span>`:v.missing.length?`<span class="${v.optional?'mut':'bad'}">${esc(v.label)}: not covered${v.optional?' (optional)':''}</span>`:`${esc(v.label)}: ${v.pts.map(p=>p.label).join(', ')}`).join('<br>');
+    const na=!s.pts.length, nc=s.pts.filter(p=>p.v==='corr').map(p=>p.x.label), nb=s.pts.filter(p=>p.v==='b').map(p=>p.x.label), nn=s.pts.filter(p=>p.v==='nok').map(p=>p.x.label);
+    const use=[na?'Not verified':s.v==='ok'?'Usable as calibrated':'',nc.length&&`Correction at ${nc.join(', ')}`,nb.length&&`Rule B only at ${nb.join(', ')}`,nn.length&&`<span class="bad">Not usable at ${nn.join(', ')}</span>`,s.gaps.length&&!na&&'<span class="bad">Severity not verified</span>',s.ramp&&'Ramp to verify'].filter(Boolean).join('<br>');
+    return `<tr><td class="l"><b>${esc(s.k)}</b><br><span class="mut">${esc(s.s.title)}</span></td><td>${tol}</td><td class="l">${cov}</td><td>${yn(s.allA,na)}</td><td>${yn(s.allC,na)}</td><td>${yn(s.allB,na)}</td><td class="l">${use}</td></tr>`;}).join('');
+  const stdBox=d.std.length?`<div class="tw"><table class="t"><thead><tr><th class="l">Standard</th><th>TU</th><th class="l">Severities and calibrated points</th><th>Rule A<br>as calibrated</th><th>Rule A<br>with correction</th><th>Rule B</th><th class="l">Use</th></tr></thead><tbody>${stdRows}</tbody></table></div>`:'<p class="fn">No test standards set for this equipment: the plan tolerance is used. Set them in the equipment, under Validation.</p>';
+  const resTable=q=>{const xs=byQ(q); if(!xs.length) return ''; const T=xs[0].T, u=QU[q];
+    const tr=xs.map(x=>`<tr><td class="l"><b>${x.label}</b></td><td>${fsg(x.e0)}</td><td><b>${fsg(x.e1)}</b></td><td class="${x.T!=null&&x.drift>DRIFT_WARN*x.T+EPS?'wn':''}">${x.drift==null?'—':fx(x.drift)}</td><td>${fx(x.U)}</td>
+      <td class="${x.passA?'':'bad'}">${fx(x.A)}</td><td class="${x.passB?'':'bad'}">${x.e1==null?'—':fx(Math.abs(x.e1))}</td><td class="${x.passC?'':'bad'}">${fx(x.C)}</td><td>${fx(x.stab)}</td><td class="${x.zOut.length?'wn':''}">${fx(x.unif)}</td>
+      <td class="${x.v==='corr'?'':'mut'}">${x.v==='corr'||x.v==='b'||x.v==='nok'?`<b>${fsg(x.corr)}</b>`:fsg(x.corr)}</td><td>${vTag(x.v)}</td></tr>`).join('');
+    return `<h3>${qName[q]} <small>TU ±${fmtNum(T)} ${u} (${d.tu[q].src==='standard'?'tightest standard':'plan tolerance'}) · values in ${u}</small></h3><div class="tw"><table class="t"><thead><tr><th class="l">Point</th><th>e ${esc(y0||'prev.')}</th><th>e ${esc(y1)}</th><th>Drift</th><th>U (k=2)</th><th>A: |e|+U</th><th>B: |e|</th><th>U + drift</th><th>Stability</th><th>Uniformity</th><th>Setpoint correction</th><th>Result</th></tr></thead><tbody>${tr}</tbody></table></div>`;};
+  const charts=['T','RH'].filter(q=>byQ(q).length).map(q=>`<div class="chart"><div class="ct">${qName[q]}: error per point</div>${errChart(byQ(q),q,byQ(q)[0].T,y0,y1)}</div>`).join('');
+  const nz=Math.max(0,...d.rows.map(x=>x.zones.length));
+  const zRows=d.rows.filter(x=>x.zones.length).map(x=>`<tr><td class="l"><b>${x.label}</b></td>${Array.from({length:nz},(_,i)=>{const z=x.zones[i], p=x.pz[i], out=x.zOut.includes(i);
+    return `<td class="${out?'bad':''}">${z==null?'—':fsg(z-x.nom)}${p!=null?`<br><span class="${x.T!=null&&Math.abs(p-x.nom)>x.T+EPS?'bad':'mut'}">${fsg(p-x.nom)}</span>`:''}</td>`}).join('')}<td>${x.zones.length?fx(Math.max(...x.zones.filter(z=>z!=null))-Math.min(...x.zones.filter(z=>z!=null))):'—'}</td></tr>`).join('');
+  const cnt=(q,f)=>{const xs=byQ(q); return xs.length?`${qName[q]} ${xs.filter(f).length}/${xs.length}`:''};
+  const cnts=f=>['T','RH'].map(q=>cnt(q,f)).filter(Boolean).join(' · ');
+  const rules=`<div class="rules"><div><b>Rule A · guard band: |e| + U ≤ TU</b>The error plus the expanded uncertainty stays inside the tolerance (ILAC-G8, risk of a false accept ≤ 2.5 %). Strict rule, used by default.<br><b style="margin-top:6px">${cnts(x=>x.passA)}</b></div>
+    <div><b>Rule A with setpoint correction: U + drift ≤ TU</b>The known error is compensated with a setpoint offset of −e from the current certificate (§6.4.11). What is left until the next calibration is the drift plus U.<br><b style="margin-top:6px">${cnts(x=>x.passA||x.passC)}</b></div>
+    <div><b>Rule B · simple acceptance: |e| ≤ TU</b>Only the error is compared with the tolerance; the uncertainty is not deducted (higher risk of a false accept). Must be agreed and stated when it is used (§7.1.3).<br><b style="margin-top:6px">${cnts(x=>x.passB)}</b></div></div>`;
+  const iso=[['§6.4.4','Equipment verified against the specified requirements before being put (back) into service.'],['§6.4.5','Equipment capable of the accuracy and uncertainty the test needs.'],['§6.4.6 · §6.4.7','Calibration of the points that affect the results; calibration programme reviewed and adjusted.'],['§6.4.9','Equipment that gives questionable results taken out of service until it is shown to work correctly.'],['§6.4.10','Intermediate checks to keep confidence in the performance.'],['§6.4.11','Correction factors from the calibration updated and applied.'],['§6.4.13','Equipment records: results, adjustments, acceptance criteria and due date.'],['§6.5','Metrological traceability through an accredited calibration lab.'],['§7.1.3 · §7.8.6','Decision rule agreed and stated with any statement of conformity (ILAC-G8:09/2019).'],['§7.6','Evaluation of measurement uncertainty.'],['§7.10','Nonconforming work: effect on the tests already done.'],['§8.5','Actions to address risks: drift and calibration interval.']];
+  const body=`${concl}
+    <h3>1 · Equipment</h3>${eqBox}
+    <h3>2 · Test standards and use <small>tolerance of each standard; severities matched to the calibrated points</small></h3>${stdBox}
+    ${resTable('T')}${resTable('RH')}
+    <p class="fn">e = mean of all positions − nominal. Drift = increase of |e| since ${esc(y0||'the previous certificate')} (0 if it decreased). Setpoint correction = −e, to be added to the setpoint. Stability and uniformity as stated in the certificate. Values in red do not meet TU.</p>
+    <h3>${d.prev?`${esc(y0)} vs ${esc(y1)}`:esc(y1)} · error and uncertainty</h3><div class="charts">${charts}</div>${legendHtml(d.prev?y0:'',y1)}
+    ${zRows?`<h3>Positions <small>error of each position (position − nominal); ${esc(y1)} on top${d.rows.some(x=>x.pz.length)?`, ${esc(y0)} below`:d.prev?`; ${esc(y0)} not compared (different number of positions)`:''}</small></h3><div class="tw"><table class="t"><thead><tr><th class="l">Point</th>${Array.from({length:nz},(_,i)=>`<th>P${i+1}</th>`).join('')}<th>Spread</th></tr></thead><tbody>${zRows}</tbody></table></div><p class="fn">Positions in the order of the certificate. In red: outside ±TU. Spread = highest − lowest position.</p>`:''}
+    <h3>Decision rules${byQ('RH').length?' <small>both shown; the rule for humidity is still to be decided</small>':''}</h3>${rules}
+    <h3>Actions</h3>${acts.length?`<ol class="acts">${acts.map(a=>`<li>${a.text}<span class="ref">ISO/IEC 17025 ${a.ref}</span></li>`).join('')}</ol>`:'<p class="fn">No actions: every point conforms as calibrated.</p>'}
+    <h3>ISO/IEC 17025:2017 references</h3><ul class="iso">${iso.map(([k,t])=>`<li><b>${k}</b> ${t}</li>`).join('')}</ul>
+    <h3>Approval</h3><dl class="sig"><div><dt>Issued by</dt><dd>Pending</dd></div><div><dt>Approved by</dt><dd>Pending</dd></div><div><dt>Date and signature</dt><dd>Pending</dd></div></dl>`;
+  return `<article class="sheet" id="sheet"><table class="doc"><thead><tr><td>${head}</td></tr></thead><tfoot><tr><td>${foot}</td></tr></tfoot><tbody><tr><td><div class="db">${body}</div></td></tr></tbody></table></article>`;
+}
+
 function vMaintenance(){
   if(!IX.eqs.length) return emptyState();
   const planned=IX.eqs.filter(e=>IX.maint.get(e.id).key!=='none'&&matchEq(e)), cnt=k=>planned.filter(e=>IX.maint.get(e.id).key===k).length;
@@ -667,14 +945,8 @@ function vData(){
     <label class="drop-zone" data-dz="xlsx" style="margin-top:12px"><input type="file" id="file-xlsx" accept=".xlsx,.xlsm,.xls"><b>Drop the calibration plan Excel here</b><span class="muted">or click to choose the file</span></label>
   </section>
   <section class="panel"><div class="panel-h"><h2>Data file</h2><span class="muted">${nEq} equipment · ${nCal} calibrations · ${nEv} evaluations · ${nMt} maintenance entries</span></div>
-    <p class="note" style="margin-bottom:10px">While we work locally, every change is kept in this browser at once. To keep a copy in the project folder (and later upload it to GitHub), save it as <span class="mono">calibraciones/data/calibraciones.json</span>.
-    ${STORE.dirty?`<b style="color:var(--warn)"> ${plural(STORE.dirty,'change')} not saved to a file yet.</b>`:STORE.savedAt?` Last saved to a file: ${new Date(STORE.savedAt).toLocaleString('en-GB')}.`:''}</p>
-    <div class="row"><button class="btn primary" data-act="save-file">${window.showSaveFilePicker?(STORE.handle?`Save to ${esc(STORE.handle.name)}`:'Save to file…'):'Download data (JSON)'}</button>
-      ${window.showSaveFilePicker?'<button class="btn" data-act="download">Download a copy</button>':''}
-      <label class="btn">Open data file…<input type="file" id="file-json" accept=".json,application/json" hidden></label>
-      <button class="btn" data-act="export-xlsx">Export plan to Excel</button>
-      <span class="sp"></span><button class="btn ghost danger" data-act="reset">Discard browser copy</button></div>
-    ${S.load?`<div class="banner" style="margin-top:12px">Replace the current data with <b>${esc(S.load.name)}</b> (${Object.keys(S.load.data.equipment||{}).length} equipment)? Changes not saved to a file will be lost. <div class="row" style="margin-top:8px"><button class="btn primary sm" data-act="load-ok">Replace</button><button class="btn sm" data-act="load-cancel">Cancel</button></div></div>`:''}
+    <p class="note" style="margin-bottom:10px">The data is kept in <a href="https://github.com/${REPO.owner}/${REPO.repo}/blob/${REPO.branch}/${REPO.path}" target="_blank" rel="noopener"><span class="mono">${REPO.path}</span></a> of the private repository <span class="mono">${REPO.owner}/${REPO.repo}</span>. Every change is saved as a commit: the <a href="https://github.com/${REPO.owner}/${REPO.repo}/commits/${REPO.branch}/${REPO.path}" target="_blank" rel="noopener">history</a> shows who changed what and when.</p>
+    <div class="row"><button class="btn" data-act="download">Download a copy (JSON)</button><button class="btn" data-act="export-xlsx">Export plan to Excel</button></div>
   </section>`;
 }
 
@@ -876,12 +1148,13 @@ function inp(name,val,type='text',extra=''){return `<input id="f-${name}" name="
 function sel(name,val,opts,extra=''){return `<select id="f-${name}" name="${name}" ${extra}>${opts.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o]; return `<option value="${esc(v)}" ${String(val??'')===String(v)?'selected':''}>${esc(l)}</option>`}).join('')}</select>`}
 function dlgShell(eyebrow,title,body,footerLeft='',narrow=false){
   dlg.classList.toggle('narrow',narrow);
+  if(S.ro) footerLeft='';
   dlg.innerHTML=`<form class="dlg-form" id="dlg-form" novalidate><header class="dlg-h"><div><p class="eyebrow">${eyebrow}</p><h2>${esc(title)}</h2></div><button type="button" class="icon-btn" data-act="close" aria-label="Close">×</button></header>
   <div class="dlg-body">${body}<div id="f-err" class="form-err" hidden></div></div>
   <footer class="dlg-f">${footerLeft}<span class="sp"></span><button type="button" class="btn ghost" data-act="close">Cancel</button><button class="btn primary" type="submit">Save</button></footer></form>`;
   if(!dlg.open) dlg.showModal();
 }
-function readForm(){const fd=new FormData($('#dlg-form')), o={}; for(const [k,v] of fd.entries()) if(!k.startsWith('pt-')) o[k]=typeof v==='string'?v.trim():v; return o;}
+function readForm(){const fd=new FormData($('#dlg-form')), o={}; for(const [k,v] of fd.entries()) if(!/^(pt|r)-/.test(k)) o[k]=typeof v==='string'?v.trim():v; return o;}
 function formErr(m){const el=$('#f-err'); el.textContent=m; el.hidden=!m; if(m) el.scrollIntoView({block:'nearest'}); return null;}
 const eqOptions=()=>IX.eqs.filter(e=>e.state!=='Reserved').map(e=>[e.id,`${e.code} · ${e.description||''}`]);
 const ptRow=p=>`<div class="pt-row"><input name="pt-range" value="${esc(p.range||'')}" placeholder="Working range" aria-label="Working range"><input name="pt-points" value="${esc(p.points||'')}" placeholder="Calibration points" aria-label="Calibration points"><input name="pt-tol" value="${esc(p.tolerance||'')}" placeholder="Tolerance, e.g. ±3ºC" aria-label="Tolerance"><input name="pt-detail" value="${esc(p.detail||'')}" placeholder="Detail (axis, channel…)" aria-label="Detail"><button type="button" class="icon-btn" data-act="pt-del" aria-label="Remove point">×</button></div>`;
@@ -891,7 +1164,7 @@ function openEq(id){
   const isNew=!id, e=isNew?{code:nextCode(),group:'Auxiliary equipment',state:'In use',calMode:'Periodic',periodMonths:12,actionType:'External',location:'In situ',points:[{}],maint:{}}:clone(DATA.equipment[id]);
   if(!e) return;
   dlg.dataset.kind='eq'; dlg.dataset.id=id||'';
-  const m=e.maint||{}, recs=isNew?[]:(IX.recs.get(id)||[]).slice().reverse(), evs=isNew?[]:(IX.evals.get(id)||[]), logs=isNew?[]:(IX.logs.get(id)||[]), iss=isNew?[]:IX.issues.get(id), info=isNew?null:IX.info.get(id);
+  const m=e.maint||{}, val=e.validation||{}, recs=isNew?[]:(IX.recs.get(id)||[]).slice().reverse(), evs=isNew?[]:(IX.evals.get(id)||[]), logs=isNew?[]:(IX.logs.get(id)||[]), iss=isNew?[]:IX.issues.get(id), info=isNew?null:IX.info.get(id);
   const guide=isNew?`<div class="hint"><b>New equipment guide (F-IM-FM-001):</b><ol class="guide"><li>Assign the inventory code (next free: ${esc(nextCode())}).</li><li>Enter the complete information in the plan.</li><li>Set the calibration period and tolerances.</li><li>Enter the maintenance information and its period.</li><li>Upload the equipment documentation to SharePoint (certificates folder ${esc(S.cfg.certPath.replace('{code}','<code>').replace(/%20/g,' '))}).</li></ol></div>`:'';
   const body=`${guide}${!isNew?`<div class="row">${pill(e,info)} ${info.due?`<span class="muted">Next: <b>${fmtML(info.due)}</b></span>`:''} <span class="sp"></span><a class="btn sm" href="${esc(certLink(e))}" target="_blank" rel="noopener">📁 Certificates folder</a></div>`:''}
   <fieldset><legend>Identification</legend>
@@ -917,6 +1190,15 @@ function openEq(id){
     <div class="pt-head"><span>Working range</span><span>Calibration points</span><span>Tolerance</span><span>Detail</span><span></span></div>
     <div id="pt-list">${(e.points&&e.points.length?e.points:[{}]).map(ptRow).join('')}</div>
     <button type="button" class="btn sm" data-act="pt-add">+ Add range / channel</button>
+  </fieldset>
+  <fieldset><legend>Validation (test standards)</legend>
+    <div class="checks span2">${Object.entries(STANDARDS).map(([k,s])=>`<label class="check"><input type="checkbox" name="vstd" value="${esc(k)}" ${(val.standards||[]).includes(k)?'checked':''}> <span><b>${esc(k)}</b> · ${esc(s.title)} <span class="muted">(${Object.entries(s.tol).map(([q,t])=>`±${t} ${QU[q]}`).join(' · ')})</span></span></label>`).join('')}</div>
+    <p class="note span2">The validation sheet checks every calibrated point against the tightest tolerance of the ticked standards and lists the test conditions the calibration does not cover.</p>
+    ${fld('f-vRange','Validated range',inp('vRange',val.range,'text','placeholder="-40 to +80 ºC · 10 to 95 %RH"'))}
+    ${fld('f-vZone','Useful zone',inp('vZone',val.usefulZone,'text','placeholder="W × H × D mm"'))}
+    ${fld('f-vVolume','Volume',inp('vVolume',val.volume,'text','placeholder="litres"'))}
+    ${fld('f-vFeed','Feed-throughs',inp('vFeed',val.feedthroughs))}
+    ${isNew?'':`<div class="span2"><button type="button" class="btn sm" data-act="sheet" data-id="${esc(id)}">Open validation sheet</button></div>`}
   </fieldset>
   <fieldset><legend>Maintenance</legend>
     <label class="check span2"><input type="checkbox" name="mReq" id="f-mReq" ${m.required?'checked':''}> Maintenance required</label>
@@ -966,7 +1248,8 @@ function saveEq(f){
   const data={code,group:f.group,state:f.state,description:f.description,brand:f.brand||'',model:f.model||'',serial:f.serial||'',calMode:mode,
     periodMonths:mode==='Periodic'?per:'',lastCal:['Periodic','Expiry date'].includes(mode)?f.lastCal||'':'',nextOverride:['Periodic','Expiry date'].includes(mode)&&f.nextOverride&&f.nextOverride!==calc?f.nextOverride:'',
     actionType:f.actionType||'',location:f.location||'',duration:f.duration||'',lab:f.lab||'',enac:f.enac||'',price:num(f.price)??'',points,
-    maint:{required:!!f.mReq,periodMonths:num(f.mPeriod)??'',last:f.mLast||'',provider:f.mProvider||'',notes:f.mNotes||''},certUrl:f.certUrl||'',notes:f.notes||'',updated:nowIso()};
+    maint:{required:!!f.mReq,periodMonths:num(f.mPeriod)??'',last:f.mLast||'',provider:f.mProvider||'',notes:f.mNotes||''},
+    validation:{...((prev||{}).validation||{}),standards:[...dlg.querySelectorAll('[name=vstd]:checked')].map(i=>i.value),range:f.vRange||'',usefulZone:f.vZone||'',volume:f.vVolume||'',feedthroughs:f.vFeed||''},certUrl:f.certUrl||'',notes:f.notes||'',updated:nowIso()};
   if(id) return save([{op:'update',col:'equipment',id,data}],`${code} saved.`);
   let nid='eq-'+slug(code); if(DATA.equipment[nid]) nid='eq-'+rid();
   return save([{op:'set',col:'equipment',id:nid,data:{...data,src:'manual',importNotes:[],created:nowIso()}}],`${code} added.`);
@@ -991,15 +1274,29 @@ function openCal(id,preset={}){
     ${fld('f-certRef','Certificate number or link',inp('certRef',c.certRef),'span2')}
     <div class="span2" id="cal-hint"></div>
   </fieldset>
+  <fieldset id="results" class="pts"><legend>Certificate results (validation sheet)</legend>
+    <p class="note" style="margin-bottom:8px">One row per calibration point as in the certificate: nominal, mean of all positions, expanded uncertainty U (k=2), stability, uniformity and the mean of each position separated by “;”. For humidity, also the temperature of the point.</p>
+    <div class="field" style="max-width:220px;margin-bottom:8px"><label for="f-zonesN">Positions measured</label><input id="f-zonesN" name="zonesN" type="number" min="1" step="1" value="${esc(c.zonesN??'')}"></div>
+    <div class="res-head"><span>Quantity</span><span>Nominal</span><span>At ºC</span><span>Mean</span><span>U (k=2)</span><span>Stab.</span><span>Unif.</span><span>Positions</span><span></span></div>
+    <div id="res-list">${(c.results||[]).map(resRow).join('')}</div>
+    <button type="button" class="btn sm" data-act="res-add">+ Add point</button>
+  </fieldset>
   ${fld('f-notes','Notes',`<textarea id="f-notes" name="notes" rows="2">${esc(c.notes||'')}</textarea>`)}
   ${prev&&prev.source?`<p class="note">Source: ${esc(prev.source)}</p>`:''}`;
   dlgShell(e?esc(eqLabel(e)):'Calibration',prev?`${prev.status==='Planned'?'Planned':'Calibration'} ${fmtM(prev.month)}`:c.status==='Planned'?'Plan a calibration':'Register a calibration',body,prev?'<button type="button" class="btn ghost danger" data-act="del">Delete</button>':'',true);
   calHints();
 }
+const RES_F=[['nominal','Nominal'],['atT','Temperature of the humidity point'],['mean','Mean'],['U','Expanded uncertainty U'],['stab','Stability'],['unif','Uniformity']];
+const resRow=r=>`<div class="res-row"><select name="r-q" aria-label="Quantity">${Object.entries(QU).map(([q,u])=>`<option value="${q}" ${r.q===q?'selected':''}>${u}</option>`).join('')}</select>${RES_F.map(([k,l])=>`<input name="r-${k}" inputmode="decimal" value="${esc(r[k]??'')}" aria-label="${l}">`).join('')}<input name="r-zones" value="${esc((r.zones||[]).join('; '))}" placeholder="P1; P2; …" aria-label="Mean of each position"><button type="button" class="icon-btn" data-act="res-del" aria-label="Remove point">×</button></div>`;
+function readResults(){
+  return [...dlg.querySelectorAll('.res-row')].map(row=>{const g=k=>row.querySelector(`[name=r-${k}]`).value, q=g('q');
+    return {q,nominal:num(g('nominal')),atT:q==='RH'?num(g('atT')):null,mean:num(g('mean')),U:num(g('U')),stab:num(g('stab')),unif:num(g('unif')),zones:g('zones').split(';').map(num).filter(v=>v!=null)};
+  }).filter(r=>r.nominal!=null&&r.mean!=null);
+}
 function calHints(){
   if(dlg.dataset.kind!=='cal') return;
   const f=readForm(), done=f.status==='Done', h=$('#cal-hint'), e=eqById(f.equipmentId);
-  $('#closure').disabled=!done;
+  $('#closure').disabled=!done; $('#results').hidden=!done;
   if(!done){h.innerHTML='<div class="hint">Planned calibrations show as <b>P</b> in the annual plan. Change the status to <b>Done</b> once it has been performed.</div>'; return;}
   const c={status:'Done',certificate:!!f.certificate,inTolerance:f.inTolerance,label:!!f.label};
   const next=e&&e.calMode==='Periodic'&&f.month?addM(f.month,+e.periodMonths):'';
@@ -1011,8 +1308,9 @@ function saveCal(f){
   if(!f.month) return formErr('Enter the month.');
   if(f.status==='Done'&&mIdx(f.month)>nowIdx()) return formErr('A calibration cannot be done in a future month. Keep it as Planned.');
   const done=f.status==='Done';
-  const data={equipmentId:f.equipmentId,month:f.month,status:f.status,lab:f.lab||'',cost:num(f.cost)??'',certificate:done&&!!f.certificate,inTolerance:done?f.inTolerance||'':'',label:done&&!!f.label,
+  const data={...(prev||{}),equipmentId:f.equipmentId,month:f.month,status:f.status,lab:f.lab||'',cost:num(f.cost)??'',certificate:done&&!!f.certificate,inTolerance:done?f.inTolerance||'':'',label:done&&!!f.label,
     certRef:f.certRef||'',notes:f.notes||'',source:prev?prev.source||'Manual':'Manual',updated:nowIso()};
+  if(done){data.results=readResults(); data.zonesN=num(f.zonesN)??'';}
   const cid=id||`cal-${slug(e.code)}-${f.month}-${rid().slice(0,4)}`, ops=[{op:'set',col:'calibrations',id:cid,data}];
   let msg=`${e.code}: calibration ${done?'registered':'planned'} for ${fmtM(f.month)}.`;
   /* A done calibration newer than the last one starts a new cycle: last date moves and a manual next date no longer applies. */
@@ -1107,14 +1405,50 @@ function deleteFromDialog(btn){
   save(ops,'Deleted.'); dlg.close();
 }
 
-/* ---------- Storage ----------
-   Local mode: the working copy lives in this browser (localStorage) and is saved to calibraciones.json on demand.
-   The first time, data/calibraciones.json (or the bundled data/calibraciones.js) is loaded.
-   When the app is published, this block is replaced by the GitHub storage of Control de ensayos (one commit per burst of changes). */
-const LS_DATA='cal.data', LS_META='cal.meta';
-const STORE={dirty:0,savedAt:'',handle:null};
+/* ---------- Storage: one JSON file in the private data repository Polinya-LAB/lab-data (folder calibraciones/) ----------
+   Same as Control de ensayos: reading calibraciones.json needs the key (token) of an account with read access; saving needs
+   write access; changes made close together are saved as one commit. The key is shared with the other lab apps (same site, same browser storage). */
+const REPO={owner:'Polinya-LAB',repo:'lab-data',branch:'main',path:'calibraciones/calibraciones.json'};
+const API=`https://api.github.com/repos/${REPO.owner}/${REPO.repo}`;
+const RAW=`https://raw.githubusercontent.com/${REPO.owner}/${REPO.repo}/${REPO.branch}/${REPO.path}`;
+const TOKEN_KEY='pd-gh-token';
+const GH={token:'',login:null,push:false,invalid:false,saving:false};
+try{GH.token=localStorage.getItem(TOKEN_KEY)||'';}catch(e){}
+S.ro=true;
+const remote={data:null,sha:null,etag:null};
+let flushTimer=null, flushing=null;
+const pendingOps=[];
+/* Local test mode: the data comes from local-data.js and is kept in this browser; nothing is read from or written to GitHub. */
+const LOCAL=!!window.CAL_LOCAL, LS_LOCAL='cal.local.data';
+/* Preview copy in new-projects: reads the real data from lab-data with the GitHub key but never writes to it.
+   Changes stay in this page until it is reloaded. Remove this line in the copy that goes to management-tools. */
+const PREVIEW=!LOCAL;
+if(LOCAL) S.ro=false;
 const emptyData=()=>Object.fromEntries(COLS.map(c=>[c,{}]));
 const normData=x=>{const o=emptyData(); for(const c of COLS) if(x&&x[c]&&typeof x[c]==='object') o[c]=x[c]; return o;};
+const b64encode=str=>{const bytes=new TextEncoder().encode(str); let bin=''; for(let i=0;i<bytes.length;i+=0x8000) bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000)); return btoa(bin);};
+const b64decode=b=>new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+const ghFetch=(url,opts={})=>fetch(url,{cache:'no-store',...opts,headers:{Accept:'application/vnd.github+json',...(GH.token?{Authorization:`Bearer ${GH.token}`}:{}),...(opts.headers||{})}});
+const httpError=res=>{const limited=res.status===429||(res.status===403&&res.headers.get('x-ratelimit-remaining')==='0'); return {code:res.status===401?'auth':limited?'rate':(res.status===403||res.status===404)?'forbidden':'unavailable',status:res.status};};
+function errMsg(e){const c=e&&e.code; if(c==='not_granted'||c==='forbidden') return 'You cannot change data: connect GitHub with an account that has write access to the repository.'; if(c==='auth') return 'Your GitHub key is no longer valid. Connect GitHub again with a new key.'; if(c==='conflict') return 'Someone else saved at the same time. Your change was not saved; try again.'; if(c==='rate') return 'GitHub is limiting requests right now. Wait a minute and try again.'; if(c==='unavailable') return 'Could not reach GitHub. Check your connection and try again.'; return 'Could not save: '+(e&&e.message||e)}
+
+async function fetchApi(useEtag){
+  const res=await ghFetch(`${API}/contents/${REPO.path}?ref=${REPO.branch}`,useEtag&&remote.etag?{headers:{'If-None-Match':remote.etag}}:{});
+  if(res.status===304) return null;
+  if(res.status===404) throw {code:'private',status:404};
+  if(!res.ok) throw httpError(res);
+  const j=await res.json(); let text;
+  if(j.content) text=b64decode(j.content);
+  else{const blob=await ghFetch(`${API}/git/blobs/${j.sha}`); if(!blob.ok) throw httpError(blob); text=b64decode((await blob.json()).content);}
+  return {data:normData(JSON.parse(text)),sha:j.sha,etag:res.headers.get('etag')};
+}
+async function fetchRaw(){
+  const res=await fetch(`${RAW}?t=${Date.now()}`,{cache:'no-store'});
+  if(res.status===404) throw {code:'private',status:404};
+  if(!res.ok) throw httpError(res);
+  return {data:normData(await res.json()),sha:null,etag:null};
+}
+/* Applies writes to a copy of the data. An update to a document someone else deleted is skipped. */
 function applyOps(data,ops){
   for(const o of ops){const c=data[o.col]||(data[o.col]={});
     if(o.op==='set') c[o.id]=clone(o.data);
@@ -1122,53 +1456,114 @@ function applyOps(data,ops){
     else if(o.op==='delete') delete c[o.id];}
   return data;
 }
-function persist(){
-  try{localStorage.setItem(LS_DATA,JSON.stringify(DATA)); localStorage.setItem(LS_META,JSON.stringify({dirty:STORE.dirty,savedAt:STORE.savedAt}));}
-  catch(e){toast('Could not keep the data in this browser: '+(e.message||e)+'. Save it to a file now.');}
+function recompute(){ DATA=remote.data?applyOps(clone(remote.data),pendingOps.flat()):null; }
+function commitMessage(ops){
+  const base=remote.data||emptyData(), cur=(o)=>({...(base[o.col]||{})[o.id],...(o.data||{})});
+  const code=id=>((base.equipment||{})[id]||{}).code||id;
+  const label=o=>{const d=cur(o); if(o.col==='equipment') return d.code||o.id; if(o.col==='calibrations') return `${code(d.equipmentId)} ${d.month||''}`.trim(); if(o.col==='config') return 'settings'; return code(d.equipmentId);};
+  const names={equipment:'equipment',calibrations:'calibration',evaluations:'TU evaluation',maintenance:'maintenance',config:'settings'};
+  if(ops.length===1){const o=ops[0], verb=o.op==='delete'?'delete':o.op==='set'&&!(base[o.col]||{})[o.id]?'add':'update';
+    return `Plan de calibraciones: ${verb} ${o.col==='config'?'settings':`${names[o.col]} ${label(o)}`}`;}
+  const n={}; ops.forEach(o=>n[o.col]=(n[o.col]||0)+1);
+  const plural={equipment:'equipment',calibrations:'calibrations',evaluations:'TU evaluations',maintenance:'maintenance entries',config:'settings'};
+  return `Plan de calibraciones: ${ops.length} changes (${Object.entries(n).map(([c,k])=>`${k} ${plural[c]||c}`).join(', ')})`;
 }
+async function commitOps(ops){
+  for(let i=0;i<4;i++){
+    const cur=await fetchApi(false), next=applyOps(clone(cur.data),ops);
+    const body={message:commitMessage(ops),branch:REPO.branch,content:b64encode(JSON.stringify(next,null,1)+'\n')}; if(cur.sha) body.sha=cur.sha;
+    const res=await ghFetch(`${API}/contents/${REPO.path}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(res.ok){const j=await res.json(); Object.assign(remote,{data:next,sha:j.content.sha,etag:null}); return;}
+    if(res.status!==409&&res.status!==422) throw httpError(res);
+    await new Promise(r=>setTimeout(r,500+Math.random()*800));
+  }
+  throw {code:'conflict'};
+}
+/* Writes show up at once on screen and are saved together, one commit per burst of changes. */
 function save(ops,msg){
   if(!ops.length) return true;
-  applyOps(DATA,ops); STORE.dirty++; persist(); render(); if(msg) toast(msg);
-  autoWrite();
+  if(LOCAL){applyOps(remote.data,ops); try{localStorage.setItem(LS_LOCAL,JSON.stringify(remote.data));}catch(e){} recompute(); render(); if(msg) toast(msg); return true;}
+  if(PREVIEW){applyOps(remote.data,ops); recompute(); render(); if(msg) toast(msg+' (preview: not saved to GitHub)'); return true;}
+  if(S.ro||!GH.push||GH.invalid){toast(errMsg({code:'not_granted'})); return null;}
+  pendingOps.push(ops); recompute(); render(); if(msg) toast(msg);
+  clearTimeout(flushTimer); flushTimer=setTimeout(flushOps,700);
   return true;
 }
-function renderStore(){
-  const b=$('#btn-store'); b.classList.toggle('dirty',!!STORE.dirty);
-  b.querySelector('span').textContent=STORE.dirty?`${plural(STORE.dirty,'change')} not saved to file`:STORE.handle?`Saved · ${STORE.handle.name}`:'Saved in this browser';
-  b.title='Data is kept in this browser. Open “Import & data” to save it to calibraciones.json.';
+async function flushOps(){
+  if(flushing) await flushing;
+  if(!pendingOps.length) return;
+  const batch=pendingOps.splice(0,pendingOps.length);
+  GH.saving=true; renderGh();
+  flushing=(async()=>{
+    try{await commitOps(batch.flat());}
+    catch(err){ if(err.code==='auth'){GH.invalid=true; GH.push=false; S.ro=true;} toast(errMsg(err)); }
+    finally{flushing=null; GH.saving=!!pendingOps.length; recompute(); render();}
+  })();
+  return flushing;
+}
+async function refresh(){
+  if(LOCAL){
+    if(!remote.data){let s=null; try{s=JSON.parse(localStorage.getItem(LS_LOCAL)||'null');}catch(e){} remote.data=normData(s||clone(window.CAL_LOCAL));}
+    recompute(); render(); return;
+  }
+  if(pendingOps.length||flushing||(PREVIEW&&remote.data)) return;
+  try{
+    const r=GH.token&&!GH.invalid?await fetchApi(true):await fetchRaw();
+    if(r){Object.assign(remote,r); if(PREVIEW) S.ro=false; recompute(); render();}
+    S.noDb=false; S.privateData=false;
+  }catch(err){
+    if(err.code==='auth'){GH.invalid=true; GH.push=false; S.ro=true; return refresh();}
+    if(!DATA){S.noDb=true; S.privateData=err.code==='private'||err.code==='forbidden'; render();}
+  }
+}
+async function connectGh(t){
+  const h={Accept:'application/vnd.github+json',Authorization:`Bearer ${t}`};
+  const [u,r]=await Promise.all([fetch('https://api.github.com/user',{headers:h,cache:'no-store'}),fetch(API,{headers:h,cache:'no-store'})]);
+  if(u.status===401||r.status===401) throw {code:'auth'};
+  if(!u.ok) throw httpError(u); if(!r.ok) throw httpError(r);
+  const user=await u.json(), repo=await r.json();
+  Object.assign(GH,{token:t,login:user.login,push:!!(repo.permissions&&repo.permissions.push),invalid:false});
+  S.ro=PREVIEW?!remote.data:!GH.push;
+}
+function disconnectGh(){Object.assign(GH,{token:'',login:null,push:false,invalid:false}); S.ro=true; try{localStorage.removeItem(TOKEN_KEY);}catch(e){} remote.etag=null; dlg.close(); render(); toast('Disconnected from GitHub. This browser no longer has the key.');}
+function renderGh(){
+  const b=$('#btn-gh'); if(!b) return;
+  if(LOCAL){b.className='gh on'; b.querySelector('span').textContent='Local test data'; b.title='Local test mode: nothing is sent to GitHub.'; document.body.classList.remove('ro'); return;}
+  b.className='gh '+(GH.invalid?'bad':GH.saving?'busy':GH.login&&GH.push?'on':'');
+  b.querySelector('span').textContent=GH.invalid?'GitHub key expired':GH.saving?'Saving…':GH.login?GH.login:'Connect GitHub';
+  if(PREVIEW&&GH.login) b.className='gh busy';
+  b.title=PREVIEW?'Preview: the data is read from GitHub, changes are not saved.':GH.login?(GH.push?'Connected with write access. Changes are saved as commits.':'Connected, but this account cannot edit the repository.'):'Connect GitHub to see and change the calibration plan';
+  document.body.classList.toggle('ro',!!S.ro);
+}
+function openGh(){
+  dlg.dataset.kind='gh'; dlg.dataset.id=''; dlg.classList.add('narrow');
+  const body=`${GH.login?`<p class="note">Connected as <b>${esc(GH.login)}</b>${GH.push?' with write access.':', but this account cannot edit the repository.'}</p>`:''}
+  <ol class="guide">
+    <li>Create an access key in GitHub: <a href="https://github.com/settings/tokens/new?scopes=repo&amp;description=Laboratorio%20Polinya" target="_blank" rel="noopener">open the form</a>. The <span class="mono">repo</span> permission is already ticked (needed because the lab data is private); choose an expiry and press <i>Generate token</i>.</li>
+    <li>Copy the key and paste it here.</li>
+  </ol>
+  <div class="field"><label for="gh-token">Access key (token)</label><input id="gh-token" type="password" placeholder="ghp_…" autocomplete="off" spellcheck="false"></div>
+  <p class="note">The key is kept only in this browser and is shared with the other lab apps. Your GitHub account must have access to the data repository <span class="mono">${REPO.owner}/${REPO.repo}</span>: Read to view, Write to edit. Every change is saved as a commit, so the history shows who changed what.</p>`;
+  dlg.innerHTML=`<form class="dlg-form" id="dlg-form" novalidate><header class="dlg-h"><div><p class="eyebrow">Access</p><h2>Connect GitHub</h2></div><button type="button" class="icon-btn" data-act="close" aria-label="Close">×</button></header>
+  <div class="dlg-body">${body}<div id="f-err" class="form-err" hidden></div></div>
+  <footer class="dlg-f">${GH.token?'<button type="button" class="btn ghost danger" data-act="gh-off">Disconnect</button>':''}<span class="sp"></span><button type="button" class="btn ghost" data-act="close">Cancel</button><button class="btn primary gh-ok" type="submit">Connect</button></footer></form>`;
+  if(!dlg.open) dlg.showModal(); $('#gh-token').focus();
+}
+async function saveGh(){
+  const t=($('#gh-token').value||'').trim(); if(!t) return formErr('Paste the access key.');
+  const btn=dlg.querySelector('button[type="submit"]'); btn.disabled=true; btn.textContent='Checking…';
+  try{
+    await connectGh(t); try{localStorage.setItem(TOKEN_KEY,t);}catch(e){}
+    remote.etag=null; S.noDb=false; await refresh(); dlg.close(); render();
+    toast(GH.push?`Connected as ${GH.login}. You can now edit.`:`Connected as ${GH.login}, but this account cannot edit the repository.`);
+  }catch(err){ btn.disabled=false; btn.textContent='Connect'; formErr(err.code==='auth'?'That key is not valid or has expired.':err.code==='forbidden'?'That key cannot see the repository.':'Could not reach GitHub. Check your connection.'); }
 }
 const json=()=>JSON.stringify(DATA,null,1)+'\n';
-async function writeHandle(){const w=await STORE.handle.createWritable(); await w.write(json()); await w.close(); STORE.dirty=0; STORE.savedAt=nowIso(); persist(); renderStore(); if(S.view==='data') render();}
-/* Once a file has been chosen and allowed in this session, every change is written to it too. */
-async function autoWrite(){ if(!STORE.handle) return; try{ if(await STORE.handle.queryPermission({mode:'readwrite'})==='granted') await writeHandle(); }catch(e){} }
-async function saveToFile(){
-  if(window.showSaveFilePicker){
-    try{
-      if(!STORE.handle) STORE.handle=await showSaveFilePicker({suggestedName:'calibraciones.json',types:[{description:'Calibration data',accept:{'application/json':['.json']}}]});
-      else if(await STORE.handle.requestPermission({mode:'readwrite'})!=='granted') throw new Error('permission');
-      await writeHandle(); idb('put',STORE.handle); toast(`Saved to ${STORE.handle.name}. Further changes are written to it automatically.`); return;
-    }catch(e){ if(e&&e.name==='AbortError') return; STORE.handle=null; }
-  }
-  download();
-}
 function download(){
   const url=URL.createObjectURL(new Blob([json()],{type:'application/json'})), a=document.createElement('a');
-  a.href=url; a.download='calibraciones.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000);
-  STORE.dirty=0; STORE.savedAt=nowIso(); persist(); render(); toast('Downloaded calibraciones.json. Copy it to calibraciones/data/ to replace the old one.');
+  a.href=url; a.download=`calibraciones_${todayIso()}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
-function idb(op,val){
-  return new Promise(res=>{try{const r=indexedDB.open('cal-plan',1); r.onupgradeneeded=()=>r.result.createObjectStore('kv'); r.onerror=()=>res(null);
-    r.onsuccess=()=>{try{const tx=r.result.transaction('kv',op==='get'?'readonly':'readwrite'), s=tx.objectStore('kv'), q=op==='get'?s.get('file'):s.put(val,'file'); q.onsuccess=()=>res(q.result||null); q.onerror=()=>res(null);}catch(e){res(null)}};}catch(e){res(null)}});
-}
-async function loadBundled(){
-  try{const r=await fetch('data/calibraciones.json',{cache:'no-store'}); if(r.ok) return await r.json();}catch(e){}
-  return window.CAL_SEED||null;
-}
-async function onJson(f){
-  if(!f) return;
-  try{const d=JSON.parse(await f.text()); if(!d||typeof d.equipment!=='object') throw new Error('it has no equipment'); S.load={name:f.name,data:d}; render();}
-  catch(e){toast('That is not a calibration data file: '+(e.message||e));}
-}
+window.addEventListener('beforeunload',e=>{ if(pendingOps.length||flushing){e.preventDefault(); e.returnValue='';} });
 
 /* ---------- Events ---------- */
 function setView(v){S.view=v; try{localStorage.setItem('cal.view',v)}catch(e){} if(location.hash!=='#'+v) history.replaceState(null,'','#'+v); render(); window.scrollTo(0,0);}
@@ -1195,21 +1590,21 @@ document.addEventListener('click',async ev=>{
   else if(a==='sort'){const st=S.sort.eq; if(st.k===t.dataset.k) st.dir=-st.dir; else {st.k=t.dataset.k; st.dir=1;} render();}
   else if(a==='kpi'){const k=t.dataset.k; if(k==='maint') return setView('maintenance'); if(k==='review') return setView('review'); S.f={group:'',lab:'',status:k}; S.q=''; setView('equipment');}
   else if(a==='clear-f'){S.f={group:'',status:'',lab:''}; S.q=''; render();}
-  else if(a==='cell'){const ms=t.dataset.m, here=(IX.recs.get(id)||[]).filter(c=>c.month===ms); if(here.length) openCal((here.find(c=>c.status==='Planned')||here[0]).id); else openCal(null,{equipmentId:id,status:mIdx(ms)>nowIdx()?'Planned':'Done',month:ms});}
+  else if(a==='cell'){if(S.ro&&!(IX.recs.get(id)||[]).some(c=>c.month===t.dataset.m)) return; const ms=t.dataset.m, here=(IX.recs.get(id)||[]).filter(c=>c.month===ms); if(here.length) openCal((here.find(c=>c.status==='Planned')||here[0]).id); else openCal(null,{equipmentId:id,status:mIdx(ms)>nowIdx()?'Planned':'Done',month:ms});}
   else if(a==='plan-nav'){const d=+t.dataset.d, y=Math.floor(nowIdx()/12); S.plan.start=d===0?null:(S.plan.start??y)+d; render();}
   else if(a==='plan-span'){S.plan.span=+t.dataset.s; try{localStorage.setItem('cal.span',S.plan.span)}catch(e){} render();}
   else if(a==='do-import'){const {ops,st}=S.imp; S.imp=null; save(ops,`Import finished: ${st.eqNew} new and ${st.eqUpd} updated equipment, ${st.calNew} calibrations, ${st.evNew} evaluations.`); setView('overview');}
   else if(a==='cancel-import'){S.imp=null; render();}
   else if(a==='export-xlsx') exportXlsx();
   else if(a==='settings') openSettings();
-  else if(a==='save-file') saveToFile();
   else if(a==='download') download();
-  else if(a==='load-ok'){DATA=normData(S.load.data); S.load=null; STORE.dirty=0; persist(); render(); toast('Data file loaded.');}
-  else if(a==='load-cancel'){S.load=null; render();}
-  else if(a==='reset'){
-    if(!t.classList.contains('armed')){t.classList.add('armed'); t.textContent=STORE.dirty?`Lose ${plural(STORE.dirty,'change')}? Click again`:'Click again to reload the data file'; return;}
-    const d=await loadBundled(); DATA=normData(d||{}); STORE.dirty=0; persist(); render(); toast(d?'Reloaded data/calibraciones.json.':'No data file found next to the page; starting empty.');
-  }
+  else if(a==='gh'){ if(LOCAL) toast('Local test mode: the data stays in this browser and GitHub is not used.'); else openGh(); }
+  else if(a==='local-reset'){try{localStorage.removeItem(LS_LOCAL);}catch(e){} remote.data=null; await refresh(); toast('Test data reset.');}
+  else if(a==='sheet'){S.sheet=id; dlg.close(); setView('sheets');}
+  else if(a==='print'){const e=eqById(S.sheet), t=document.title; if(e) document.title=`${e.code}-VAL ${todayIso()}`; window.print(); document.title=t;}
+  else if(a==='res-add'){$('#res-list').insertAdjacentHTML('beforeend',resRow({q:'T'})); $('#res-list').lastElementChild.querySelector('input').focus();}
+  else if(a==='res-del') t.closest('.res-row').remove();
+  else if(a==='gh-off') disconnectGh();
 });
 document.addEventListener('input',ev=>{
   if(ev.target.id==='q'){S.q=ev.target.value; const pos=ev.target.selectionStart; render(); const q=$('#q'); if(q){q.focus(); try{q.setSelectionRange(pos,pos)}catch(e){}}}
@@ -1218,28 +1613,27 @@ document.addEventListener('input',ev=>{
 document.addEventListener('change',ev=>{
   const el=ev.target;
   if(el.id==='file-xlsx') onXlsx(el.files[0]);
-  else if(el.id==='file-json') onJson(el.files[0]);
   else if(el.id==='plan-all'){S.plan.all=el.checked; render();}
+  else if(el.id==='sheet-pick'){S.sheet=el.value; render();}
   else if(el.dataset.f){S.f[el.dataset.f]=el.value; render();}
   else if(el.dataset.calf){S.calf[el.dataset.calf]=el.value; render();}
   else if(el.dataset.tog){const c=DATA.calibrations[el.dataset.id]; save([{op:'update',col:'calibrations',id:el.dataset.id,data:{[el.dataset.tog]:el.checked,updated:nowIso()}}],`${eqById(c.equipmentId)?.code||''} ${fmtM(c.month)}: ${el.dataset.tog==='label'?'label':'certificate'} ${el.checked?'ticked':'unticked'}.`);}
   else if(el.dataset.tol){const c=DATA.calibrations[el.dataset.tol]; save([{op:'update',col:'calibrations',id:el.dataset.tol,data:{inTolerance:el.value,updated:nowIso()}}],`${eqById(c.equipmentId)?.code||''} ${fmtM(c.month)}: in tolerance = ${el.value||'not checked'}.`);}
   else if(dlg.open&&dlg.contains(el)){eqHints(); calHints(); evHints();}
 });
-document.addEventListener('submit',ev=>{ if(ev.target.id!=='dlg-form') return; ev.preventDefault(); saveDialog(); });
+document.addEventListener('submit',ev=>{ if(ev.target.id!=='dlg-form') return; ev.preventDefault(); if(dlg.dataset.kind==='gh') saveGh(); else saveDialog(); });
 const dzOf=ev=>ev.target.closest&&ev.target.closest('[data-dz]');
 document.addEventListener('dragover',ev=>{const z=dzOf(ev); if(z&&ev.dataTransfer&&[...ev.dataTransfer.types].includes('Files')){ev.preventDefault(); z.classList.add('over');}});
 document.addEventListener('dragleave',ev=>{const z=dzOf(ev); if(z) z.classList.remove('over');});
 document.addEventListener('drop',ev=>{const z=dzOf(ev); if(z&&ev.dataTransfer.files.length){ev.preventDefault(); z.classList.remove('over'); onXlsx(ev.dataTransfer.files[0]);}});
 window.addEventListener('hashchange',()=>{const h=location.hash.slice(1); if(VIEWS.some(x=>x[0]===h)&&h!==S.view) setView(h);});
-window.addEventListener('storage',ev=>{ if(ev.key===LS_DATA&&ev.newValue){ try{DATA=normData(JSON.parse(ev.newValue)); render();}catch(e){} } });
 
 /* ---------- Boot ---------- */
+render();
 (async()=>{
-  let d=null; try{d=JSON.parse(localStorage.getItem(LS_DATA)||'null'); const m=JSON.parse(localStorage.getItem(LS_META)||'null'); if(m){STORE.dirty=+m.dirty||0; STORE.savedAt=m.savedAt||'';}}catch(e){}
-  if(!d){ d=await loadBundled(); DATA=normData(d||{}); persist(); } else DATA=normData(d);
-  STORE.handle=await idb('get');
-  render();
+  if(GH.token&&!LOCAL){ try{await connectGh(GH.token);}catch(err){ if(err.code==='auth') GH.invalid=true; } }
+  await refresh(); render();
+  setInterval(()=>{ if(!document.hidden&&!dlg.open) refresh(); }, GH.token?30000:60000);
 })();
 </script>
 </body>
