@@ -447,6 +447,36 @@ function sheetText(ws,r){
   }
   return lines.join('\n');
 }
+/* Two measures per photo to choose the representative ones without AI: a 256-bit difference hash (near-identical shots give
+   almost the same hash; 256 bits so that different samples on the same bench are still told apart) and the sharpness (variance of the Laplacian; blurred or shaken photos give low values). */
+function photoMetrics(img){
+  const c=document.createElement('canvas'), g=c.getContext('2d',{willReadFrequently:true});
+  const gray=(w,h)=>{c.width=w; c.height=h; g.drawImage(img,0,0,w,h); const d=g.getImageData(0,0,w,h).data, out=new Float32Array(w*h);
+    for(let i=0;i<w*h;i++) out[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2]; return out;};
+  const hd=gray(17,16); let hash='';
+  for(let y=0;y<16;y++) for(let x=0;x<16;x++) hash+=hd[y*17+x]<hd[y*17+x+1]?'1':'0';
+  const k=Math.min(1,240/Math.max(img.naturalWidth,img.naturalHeight)), w=Math.max(3,Math.round(img.naturalWidth*k)), h=Math.max(3,Math.round(img.naturalHeight*k)), p=gray(w,h);
+  let n=0, sum=0, sq=0;
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){const i=y*w+x, l=p[i-1]+p[i+1]+p[i-w]+p[i+w]-4*p[i]; sum+=l; sq+=l*l; n++;}
+  return {hash,sharp:n?sq/n-(sum/n)**2:0};
+}
+const hamming=(a,b)=>{if(!a||!b) return 256; let d=0; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) d++; return d;};
+const KEY_PHOTO=/set.?up|montaje|overview|general|initial|inicial|before|antes|after|despu[eé]s|final|end|sample|muestra|fail|fallo|defect|damage|rotura/i;
+/* Representative photos of a group: one of each set of near-identical shots (the sharpest), no blurred ones while there are
+   sharp ones, and up to max: first the ones whose name says what they show, then evenly spread over the rest. */
+function representative(list,max){
+  const kept=[];
+  for(const f of list){const i=kept.findIndex(k=>hamming(k.hash,f.hash)<=12); if(i<0) kept.push(f); else if((f.sharp||0)>(kept[i].sharp||0)) kept[i]=f;}
+  const sh=kept.map(f=>f.sharp||0).sort((a,b)=>a-b), med=sh[Math.floor(sh.length/2)]||0;
+  let good=kept.filter(f=>(f.sharp||0)>=med*0.3); if(!good.length) good=kept;
+  if(good.length>max){
+    const pri=good.filter(f=>KEY_PHOTO.test(f.name)), rest=good.filter(f=>!KEY_PHOTO.test(f.name)), out=pri.slice(0,max), need=max-out.length;
+    for(let i=0;i<need;i++) out.push(rest[Math.floor(i*rest.length/need)]);
+    good=out;
+  }
+  return good.sort((a,b)=>a.path.localeCompare(b.path,undefined,{numeric:true}));
+}
+const MAX_GROUP_PHOTOS=6, MAX_SIMPLE_PHOTOS=6;
 async function extract(f){
   f.state='reading';
   try{
@@ -467,7 +497,7 @@ async function extract(f){
     }else if(f.kind==='image'){
       f.url=URL.createObjectURL(f.file);
       const img=await new Promise((res,rej)=>{const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('the image cannot be opened')); i.src=f.url;});
-      f.w=img.naturalWidth; f.h=img.naturalHeight; f.info=`${f.w}×${f.h} px`;
+      f.w=img.naturalWidth; f.h=img.naturalHeight; f.info=`${f.w}×${f.h} px`; Object.assign(f,photoMetrics(img));
     }else if(f.kind==='text'){
       f.text=(await f.file.text()).trim(); f.info=`${f.text.length} characters`;
     }
@@ -617,11 +647,14 @@ function localDraft(){
   const root=FILES.length&&FILES.every(f=>f.path.includes('/'))&&new Set(FILES.map(f=>f.path.split('/')[0])).size===1?FILES[0].path.split('/')[0]+'/':'';
   const groups=new Map();
   for(const p of photos){const rel=p.path.slice(root.length), dir=rel.includes('/')?rel.slice(0,rel.lastIndexOf('/')):''; if(!groups.has(dir)) groups.set(dir,[]); groups.get(dir).push(p);}
-  const annexes=[...groups].map(([dir,list])=>({title:dir?dir.replace(/\//g,' – '):'Pictures of the test',pictures:list.map(p=>({file:p.path,caption:baseName(p.path)}))}));
+  const per=tpl==='simple'?Math.max(1,Math.ceil(MAX_SIMPLE_PHOTOS/Math.max(1,groups.size))):MAX_GROUP_PHOTOS;
+  const chosen=[...groups].map(([dir,list])=>[dir,representative(list,per)]), nChosen=chosen.reduce((s,[,l])=>s+l.length,0);
+  const annexes=chosen.map(([dir,list])=>({title:dir?dir.replace(/\//g,' – '):'Pictures of the test',pictures:list.map(p=>({file:p.path,caption:baseName(p.path)}))}));
+  if(photos.length>nChosen) issues.push({severity:'info',title:`${nChosen} of the ${photos.length} photos were chosen for the report.`,fix:'Repeated and blurred shots were left out, keeping up to '+(tpl==='simple'?MAX_SIMPLE_PHOTOS+' in total':MAX_GROUP_PHOTOS+' per folder')+'. Add or remove photos in step 4.',source:''});
   if(photos.length) issues.push({severity:'warn',title:'Check the photo captions: they are the file names.',fix:tpl==='complex'?'Write them in step 4 (Annexes), e.g. "Sample #1 after 240 h".':'Write them in step 4 (Test Results Details).',source:''});
   issues.push({severity:'warn',title:`Check the QTP deviations: the report says there were none.`,fix:'Change the text in step 4 (Test Summary) if there were any.',source:''});
   const results=[newBlock('text',{text:tpl==='complex'?'[MISSING: results per sample and criterion]':'[MISSING: short description of the results]'}),...tables,
-    ...(tpl==='simple'?photos.slice(0,10).map(p=>newBlock('figure',{file:p.path,caption:baseName(p.path)})):[])];
+    ...(tpl==='simple'?chosen.flatMap(([,l])=>l).slice(0,MAX_SIMPLE_PHOTOS).map(p=>newBlock('figure',{file:p.path,caption:baseName(p.path)})):[])];
   const simpleFits=ts.length===1&&photos.length<=10;
   return {
     template_advice:{recommended:simpleFits?'simple':'complex',reason:simpleFits?`It is one test with ${photos.length} photo${photos.length!==1?'s':''}.`:`It has ${ts.length} test${ts.length>1?'s':''} and ${photos.length} photos.`},
