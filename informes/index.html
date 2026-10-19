@@ -115,6 +115,14 @@ table.kv tr.sub td{border-bottom:0}
 .empty{color:var(--muted);font-size:14px;margin:0}
 .ai-bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 .ai-bar .sp{flex:1}
+.ai-bar+.ai-bar{margin-top:0;border-top:0;padding-top:4px}
+.blk-h{display:flex;align-items:center;gap:6px}
+.tools{margin-left:auto;display:flex;gap:4px}
+.ib{border:1px solid var(--line);background:var(--surface);border-radius:4px;min-width:26px;height:24px;cursor:pointer;font-size:12px;color:var(--muted);padding:0 6px}
+.ib:hover{border-color:var(--accent);color:var(--fg)}
+.adds{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.adds select{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:4px 8px;font-size:13px;max-width:100%}
+.pics figure{position:relative} .pics figure .ib{position:absolute;top:4px;right:4px}
 .ai-bar input[type=email]{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:7px 10px;min-width:240px}
 .issue .src{font-family:var(--f-mono);font-size:11px;color:var(--muted);margin-top:2px}
 .issue .tag{font-family:var(--f-mono);font-size:10px;border:1px solid currentColor;border-radius:3px;padding:0 4px;margin-left:6px;color:var(--accent);font-weight:500}
@@ -165,7 +173,7 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 </div></header>
 
 <main>
-  <div class="banner" id="banner"><b>Preview.</b> Sign in with your Fluidra email to draft with AI. The PDF follows the lab QTR templates; check every report before issuing it.</div>
+  <div class="banner" id="banner"><b>Preview.</b> The page prepares the report with the lab QTR templates from Control de ensayos, the calibration plan and the test files; you write the texts in step 4.</div>
 
   <section class="step" id="s1">
     <header><span class="n">1</span><h2>Request</h2><p>The test details come from Control de ensayos.</p></header>
@@ -534,7 +542,7 @@ function checks(){
     const d=AI.draft, used=new Set(), tpl=AI.tpl||REQ.tpl;
     AI.draft.issues.forEach((i,k)=>out.push({sev:i.severity,title:i.title,fix:i.fix,src:i.source,ai:true,key:k,solved:AI.solved.has(k)}));
     const adv=d.template_advice;
-    if(adv&&adv.recommended!==REQ.tpl) out.push({sev:adv.recommended==='simple'?'warn':'info',title:`The ${adv.recommended} template would fit this report better.`,fix:`${adv.reason} Choose "${adv.recommended==='simple'?'Simple':'Complex'}" in step 1 and draft again, or keep "${REQ.tpl==='simple'?'Simple':'Complex'}" if it was asked for.`,ai:true});
+    if(adv&&adv.recommended!==REQ.tpl) out.push({sev:adv.recommended==='simple'?'warn':'info',title:`The ${adv.recommended} template would fit this report better.`,fix:`${adv.reason} Choose "${adv.recommended==='simple'?'Simple':'Complex'}" in step 1 and prepare the report again, or keep "${REQ.tpl==='simple'?'Simple':'Complex'}" if it was asked for.`,tag:'TIP'});   // advice only: it never blocks the final report
     /* What the draft points to must exist in the folder, or the PDF would have holes. */
     for(const b of [...(tpl==='complex'?d.execution_blocks:[]),...d.results]){
       if(b.kind==='figure'){const f=fileByPath(b.file); if(f) used.add(f.path); else add('crit',`The figure "${b.caption}" points to a photo that is not in the folder (${b.file}).`,'Ask the AI for the right photo in step 3, or add the photo in step 2.');}
@@ -564,15 +572,85 @@ function renderReview(){
   const list=checks(), order={crit:0,warn:1,info:2,ok:3}; list.sort((a,b)=>(a.solved-b.solved)||order[a.sev]-order[b.sev]);
   const n=s=>list.filter(i=>i.sev===s&&!i.solved).length;
   const head=REQ.plr&&FILES.length?`<div class="sum"><span><b>${n('crit')}</b> to solve</span><span><b>${n('warn')}</b> to check</span><span><b>${n('info')}</b> notes</span></div>`:'';
-  $('#review').innerHTML=head+(list.length?`<div class="issues">${list.map(i=>`<div class="issue ${i.sev}${i.solved?' solved':''}">${i.key!=null?`<label class="solve"><input type="checkbox" data-solve="${i.key}" ${i.solved?'checked':''}>Solved</label>`:''}<b>${esc(i.title)}${i.ai?'<span class="tag">AI</span>':''}</b>${i.fix?`<div class="fix">${esc(i.fix)}</div>`:''}${i.src?`<div class="src">${esc(i.src)}</div>`:''}</div>`).join('')}</div>`:`<div class="issue ok"><b>No problems found in the data.</b><div class="muted">${AI.draft?'The AI found nothing either.':'The AI review of the content will be added here.'}</div></div>`)
-    +(AI.draft?'':`<p class="empty" style="margin-top:12px">The AI draft adds what it finds in the content of the files to this list.</p>`);
+  $('#review').innerHTML=head+(list.length?`<div class="issues">${list.map(i=>`<div class="issue ${i.sev}${i.solved?' solved':''}">${i.key!=null?`<label class="solve"><input type="checkbox" data-solve="${i.key}" ${i.solved?'checked':''}>Solved</label>`:''}<b>${esc(i.title)}${i.tag||i.ai?`<span class="tag">${i.tag||(AI.source==='ai'?'AI':'TO CHECK')}</span>`:''}</b>${i.fix?`<div class="fix">${esc(i.fix)}</div>`:''}${i.src?`<div class="src">${esc(i.src)}</div>`:''}</div>`).join('')}</div>`:`<div class="issue ok"><b>No problems found in the data.</b></div>`)
+    +(AI.draft?'':`<p class="empty" style="margin-top:12px">Press "Prepare report" to fill step 4 with the data. What you have to check or write is added to this list.</p>`);
+}
+
+/* ---------- Report prepared from the data, without AI ----------
+   The page fills what it can know by itself: header and test data from Control de ensayos, the Excel sheets as tables, the
+   photos grouped by folder, and the instruments of the calibration plan (codes FLE-xxx named in the files, and the plan entry
+   that matches the test bench). What only the lab knows is left as [MISSING: …] to write in step 4. */
+const AI_ON=new URLSearchParams(location.search).has('ai');   // the AI draft is kept for later: add ?ai to the address
+const newBlock=(kind,o={})=>({kind,text:'',caption:'',file:'',sheet:'',range:'',x_col:'',y_cols:[],x_label:'',y_label:'',cells:[],...o});
+const baseName=p=>String(p).split('/').pop().replace(/\.[^.]+$/,'');
+const words=s=>new Set(String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').split(/[^a-z0-9]+/).filter(w=>w.length>2&&!['the','and','for','with','test','lab'].includes(w)));
+function benchInstrument(name){
+  if(!CAL||!name) return null; const w=words(name); let best=null, score=1;
+  for(const e of Object.values(CAL.equipment||{})){ if((e.state||'In use')!=='In use') continue;
+    const d=words(e.description); let s=0; w.forEach(x=>{if(d.has(x)) s++;}); if(s>score){score=s; best=e;} }
+  return best;
+}
+const MAX_TABLE_ROWS=80;
+function localDraft(){
+  const ts=chosenTests(), t0=ts[0], tpl=REQ.tpl, issues=[];
+  const res=v=>v==='Pass'?'PASS':v==='Fail'?'FAIL':'N/A';
+  const qtps=ts.map(t=>t.qtp).join(', '), names=ts.map(t=>`${t.qtp} – ${t.title||qtpName(t.qtp)||''}`).join(', ');
+  const dur=ts.map(t=>t.durVal||t.arasDurVal?`${t.durVal||t.arasDurVal} ${String(t.durUnit||t.arasDurUnit||'').toLowerCase()}`.trim():'').filter(Boolean);
+  const benches=[...new Set(ts.map(t=>bench(t.equipmentId)||t.arasEquipment).filter(Boolean))];
+  const ok=FILES.filter(f=>f.state==='ok'), photos=ok.filter(f=>f.kind==='image'&&f.url);
+  // Excel sheets as tables; long sheets are left for the lab to place as a table or a chart.
+  const tables=[];
+  for(const f of ok) if(f.wb) for(const name of f.wb.SheetNames){
+    const ws=f.wb.Sheets[name]; if(!ws['!ref']) continue;
+    const r=XLSX.utils.decode_range(ws['!ref']), rows=r.e.r-r.s.r+1;
+    if(rows>MAX_TABLE_ROWS){issues.push({severity:'info',title:`The sheet "${name}" of ${f.name} has ${rows} rows and was not added as a table.`,fix:'If it is needed, add it in step 4 as an Excel table (with a shorter range) or as a chart.',source:f.path}); continue;}
+    tables.push(newBlock('table',{caption:`${baseName(f.path)} – ${name}`,file:f.path,sheet:name,range:ws['!ref']}));
+  }
+  // Instruments: FLE codes named in the files, then the plan entry that matches the bench of the test.
+  const codes=new Set();
+  for(const f of ok) (`${f.path}\n${f.text||''}`.toUpperCase().match(/FLE\s*-?\s*\d{1,4}/g)||[]).forEach(m=>{const e=calByCode(m); if(e) codes.add(e.code);});
+  benches.forEach(b=>{const e=benchInstrument(b); if(e) codes.add(e.code);});
+  const instruments=[...codes].sort().map(code=>({code,instrument:'',characteristic:'[MISSING: characteristic of control]',model_code:'',manufacturer:'',range:'',last_revision:'',next_revision:''}));
+  if(tpl==='complex') issues.push({severity:'warn',title:instruments.length?`Check the instruments: ${instruments.map(i=>i.code).join(', ')} come from the calibration plan.`:'No instrument of the calibration plan was found for this test.',fix:'Add or remove instruments in step 4 (Instruments and environmental conditions).',source:''});
+  // Photos grouped by the folder they are in (without the dropped folder itself).
+  const root=FILES.length&&FILES.every(f=>f.path.includes('/'))&&new Set(FILES.map(f=>f.path.split('/')[0])).size===1?FILES[0].path.split('/')[0]+'/':'';
+  const groups=new Map();
+  for(const p of photos){const rel=p.path.slice(root.length), dir=rel.includes('/')?rel.slice(0,rel.lastIndexOf('/')):''; if(!groups.has(dir)) groups.set(dir,[]); groups.get(dir).push(p);}
+  const annexes=[...groups].map(([dir,list])=>({title:dir?dir.replace(/\//g,' – '):'Pictures of the test',pictures:list.map(p=>({file:p.path,caption:baseName(p.path)}))}));
+  if(photos.length) issues.push({severity:'warn',title:'Check the photo captions: they are the file names.',fix:tpl==='complex'?'Write them in step 4 (Annexes), e.g. "Sample #1 after 240 h".':'Write them in step 4 (Test Results Details).',source:''});
+  issues.push({severity:'warn',title:`Check the QTP deviations: the report says there were none.`,fix:'Change the text in step 4 (Test Summary) if there were any.',source:''});
+  const results=[newBlock('text',{text:tpl==='complex'?'[MISSING: results per sample and criterion]':'[MISSING: short description of the results]'}),...tables,
+    ...(tpl==='simple'?photos.slice(0,10).map(p=>newBlock('figure',{file:p.path,caption:baseName(p.path)})):[])];
+  const simpleFits=ts.length===1&&photos.length<=10;
+  return {
+    template_advice:{recommended:simpleFits?'simple':'complex',reason:simpleFits?`It is one test with ${photos.length} photo${photos.length!==1?'s':''}.`:`It has ${ts.length} test${ts.length>1?'s':''} and ${photos.length} photos.`},
+    issues, title:META.title,
+    summary:{
+      test_description:`${META.title||names} performed according to ${qtps}${dur.length?` (${dur.join(', ')})`:''}. [MISSING: what was tested and the aim of the test]`,
+      sample_information:`Unit Type: [MISSING: unit type]\nSample Size: ${t0.pieces||'[MISSING: sample size]'}\n\nBuild Phase: [MISSING: build phase]`,
+      qtp_deviations:`No deviations from ${qtps} were identified during the test execution.`,
+      acceptance:ts.map(t=>({criterion:`[MISSING: acceptance criterion of ${t.qtp}]`,result:res(t.result)})),
+      results_summary:'[MISSING: key results with their values, and the result of each criterion]'},
+    samples:[{sn:'Samples #1',pn:'[MISSING: P/N]',phase:'[MISSING: project phase]',drawing_rev:'N/A',description:t0.pieces?`${t0.pieces} units`:'[MISSING: description]',reception_date:'N/A'}],
+    standards:'',
+    execution_description:`The test was performed in accordance with ${names}${benches.length?`, using the ${benches.join(' and ')}`:''}.${dur.length?` Test duration: ${dur.join(', ')}.`:''}${t0.start?` The test started on ${fmtDate(t0.start)}${t0.end?` and finished on ${fmtDate(t0.end)}`:''}.`:''}\n\n[MISSING: set-up, test conditions and inspections]`,
+    execution_blocks:[], instruments,
+    environment:{temperature:'[MISSING: temperature]',humidity:'[MISSING: humidity]'},
+    results, conclusion:`[MISSING: conclusion]${t0.result&&t0.result!=='N/A'?`\n\nThe overall test result is ${res(t0.result)}.`:''}`,
+    annexes:tpl==='complex'?annexes:[], overall_result:res(t0.result)};
+}
+function prepareLocal(){
+  if(AI.draft&&AI.edited&&!confirm('Preparing the report again replaces the changes made in step 4. Continue?')) return;
+  AI.draft=normDraft(localDraft()); AI.tpl=REQ.tpl; AI.source='local'; AI.stale=false; AI.edited=false; AI.solved=new Set(); AI.error='';
+  render(); schedulePdf(0);
+  setTimeout(()=>$('#s4').scrollIntoView({behavior:'smooth',block:'start'}),50);
 }
 
 /* ---------- AI draft (Supabase Edge Function "draft-report") ----------
    The page signs in with Supabase (email link, Fluidra addresses only) and sends the request to the function, which holds the
    Anthropic key. The URL and the publishable key below are public by design: access is controlled by the sign-in. */
 const SUPA={url:'https://otfmpfkbobetynoqqnnu.supabase.co',key:'sb_publishable_Txvap2YLR8Q9DjF_0fJx6A_k_Y5QEpQ'};   // project Automatic Reports (Polinya LAB)
-const AI={client:null,user:null,busy:false,draft:null,tpl:null,error:'',answers:'',stale:false,usage:null,seconds:null,solved:new Set()};
+const AI={client:null,user:null,busy:false,draft:null,tpl:null,source:null,error:'',answers:'',stale:false,usage:null,seconds:null,solved:new Set()};
 const aiReady=()=>!!(SUPA.url&&SUPA.key);
 async function initAi(){
   if(!aiReady()) return renderAi();
@@ -621,28 +699,32 @@ async function draftReport(){
     if(left) toast(`Only the first ${MAX_PHOTOS} photos are sent to the AI; ${left} left out.`);
     const {data,error}=await AI.client.functions.invoke('draft-report',{body});
     if(error){let msg=error.message; try{msg=(await error.context.json()).error||msg;}catch(e){} throw new Error(msg);}
-    AI.draft=normDraft(data.draft); AI.tpl=body.template; AI.usage=data.usage; AI.seconds=data.seconds; AI.stale=false; AI.edited=false; AI.solved=new Set(); AI.answers='';
+    AI.draft=normDraft(data.draft); AI.tpl=body.template; AI.source='ai'; AI.usage=data.usage; AI.seconds=data.seconds; AI.stale=false; AI.edited=false; AI.solved=new Set(); AI.answers='';
     if(!META.edited.has('title')&&AI.draft.title){META.title=AI.draft.title; META.v++;}
   }catch(e){AI.error=e.message||String(e);}
   finally{AI.busy=false; render(); schedulePdf(0);}
 }
 /* Fills the instrument rows that point to the calibration plan with the plan's data, so the table matches the plan. */
-function normDraft(d){
-  for(const r of d.instruments||[]){const e=calByCode(r.code); if(!e) continue;
-    Object.assign(r,{model_code:[e.model,e.code].filter(Boolean).join(' / '),manufacturer:e.brand||r.manufacturer,range:r.range||e.range,last_revision:e.lastCal||'N/A',next_revision:e.nextCal||'N/A',instrument:r.instrument||e.description});}
-  return d;
-}
+function fillInstrument(r){const e=calByCode(r.code); if(!e) return r;
+  return Object.assign(r,{model_code:[e.model,e.code].filter(Boolean).join(' / '),manufacturer:e.brand||r.manufacturer,range:r.range||e.range,last_revision:e.lastCal||'N/A',next_revision:e.nextCal||'N/A',instrument:r.instrument||e.description});}
+function normDraft(d){ (d.instruments||[]).forEach(fillInstrument); return d; }
 function markStale(){ if(AI.draft) AI.stale=true; }
 const aiBtnLabel=()=>AI.busy?'Drafting… (up to two minutes)':AI.draft?(AI.answers.trim()?'Apply corrections':'Draft again'):'Draft report with AI';
 function renderAiButton(){const b=$('#ai-draft-btn'); if(b) b.textContent=aiBtnLabel();}
 function renderAi(){
   const box=$('#ai'); if(!box) return;
-  let html='<div class="ai-bar">';
+  const ready=REQ.plr&&chosenTests().length&&!FILES.some(f=>f.state==='pending'||f.state==='reading');
+  let html=`<div class="ai-bar"><span class="muted">The page fills what it can from the data; you write the rest in step 4.</span><span class="sp"></span>
+    <button class="btn ${AI_ON?'':'primary'}" data-act="local-draft" ${ready?'':'disabled'}>${AI.draft&&AI.source==='local'?'Prepare again':'Prepare report'}</button></div>`;
+  if(!AI_ON){
+    if(AI.draft&&AI.stale) html+='<div class="banner" style="margin-top:10px">The request or the files changed after the report was prepared. Add what is new in step 4, or prepare it again.</div>';
+    box.innerHTML=html; return;
+  }
+  html+='<div class="ai-bar">';
   if(!aiReady()) html+='<span class="muted">The AI draft is not connected.</span>';
   else if(!AI.client) html+='<span class="muted">Loading…</span>';
   else if(!AI.user) html+=`<span>Sign in to draft with AI:</span><input type="email" id="ai-email" placeholder="name@fluidra.com" autocomplete="email"><button class="btn" data-act="ai-signin">Send sign-in link</button>`;
   else{
-    const ready=REQ.plr&&chosenTests().length&&FILES.length&&!FILES.some(f=>f.state==='pending'||f.state==='reading');
     html+=`<span class="muted">Signed in as ${esc(AI.user.email)}</span><span class="sp"></span>
       <button class="btn sm" data-act="ai-out">Sign out</button>
       <button class="btn primary" data-act="ai-draft" id="ai-draft-btn" ${ready&&!AI.busy?'':'disabled'}>${aiBtnLabel()}</button>`;
@@ -651,6 +733,8 @@ function renderAi(){
   if(AI.error) html+=`<div class="issue crit" style="margin-top:10px"><b>The draft failed: ${esc(AI.error)}</b></div>`;
   if(AI.draft){
     if(AI.stale) html+='<div class="banner" style="margin-top:10px">The request or the files changed after this draft. Draft again to update it.</div>';
+  }
+  if(AI.draft&&AI.source==='ai'){
     html+=`<label class="field" style="display:block;margin-top:12px"><span class="eyebrow">Answers and corrections for the AI</span>
       <textarea class="answers" id="ai-answers" placeholder="E.g. Sample 3 was damaged before the test. The P/N of all samples is 079929. Group the photos by sample.">${esc(AI.answers)}</textarea></label>
       <p class="muted" style="font-size:13px;margin:6px 0 0">Small changes are quicker in the editor of step 4; tick each AI problem as solved once it is fixed.</p>`;
@@ -888,7 +972,8 @@ function finalState(){
     const {issues,template_advice,...rest}=AI.draft, d=AI.draft;
     const printed=(AI.tpl||REQ.tpl)==='simple'?{title:d.title,summary:d.summary,results:d.results,conclusion:d.conclusion}:rest;
     missing=(JSON.stringify(printed).match(/\[MISSING:/g)||[]).length;}
-  return {todo,missing,stale:AI.stale,final:!!AI.draft&&!todo&&!missing&&!AI.stale};
+  const stale=AI.stale&&AI.source==='ai';   // a report prepared without AI is completed by hand, so new files do not block it
+  return {todo,missing,stale,final:!!AI.draft&&!todo&&!missing&&!stale};
 }
 const pdfName=final=>`${META.number} ${META.title}`.replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim()+(final?'':' DRAFT')+'.pdf';
 function renderFinalBar(){
@@ -906,39 +991,88 @@ function renderFinalBar(){
   if(PDF.url&&!PDF.busy&&s.final!==PDF.final) schedulePdf(300);
 }
 const missCls=v=>/\[MISSING:/.test(v||'')?' miss-f':'';
-const ta=(p,label,rows=3)=>{const v=getP(AI.draft,p)??''; return `<label class="ed"><span>${label}</span><textarea data-path="${p}" rows="${rows}" class="${missCls(v)}">${esc(v)}</textarea></label>`;};
-const inp=(p,label)=>{const v=getP(AI.draft,p)??''; return `<label class="ed">${label?`<span>${label}</span>`:''}<input data-path="${p}" value="${esc(v)}" class="${missCls(v)}"></label>`;};
+const ta=(p,label,rows=3)=>{const v=getP(AI.draft,p)??''; return `<label class="ed">${label?`<span>${label}</span>`:''}<textarea data-path="${p}" rows="${rows}" class="${missCls(v)}">${esc(v)}</textarea></label>`;};
+const inp=(p,label)=>{const v=getP(AI.draft,p)??''; return `<label class="ed">${label?`<span>${label}</span>`:''}<input data-path="${p}" value="${esc(v)}" class="${missCls(String(v))}"></label>`;};
 const sel=(p,label,opts)=>{const v=getP(AI.draft,p); return `<label class="ed"><span>${label}</span><select data-path="${p}">${opts.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select></label>`;};
+const opt=(v,label,cur)=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(label)}</option>`;
+const ib=(act,p,sym,title)=>`<button type="button" class="ib" data-act="${act}" data-arg="${p}" title="${title}" aria-label="${title}">${sym}</button>`;
+const tools=p=>`<span class="tools">${ib('ed-up',p,'↑','Move up')}${ib('ed-down',p,'↓','Move down')}${ib('ed-del',p,'✕','Remove')}</span>`;
+const xlsFiles=()=>FILES.filter(f=>f.wb), photoFiles=()=>FILES.filter(f=>f.kind==='image'&&f.url);
+const KIND_LABEL={text:'Text',table:'Excel table',chart:'Chart',figure:'Photo'};
 function blocksEd(key){
-  const list=AI.draft[key]||[]; if(!list.length) return '<p class="empty">Nothing here.</p>';
-  return list.map((b,i)=>{const p=`${key}.${i}`;
-    if(b.kind==='text') return ta(`${p}.text`,'Text',6);
+  const list=AI.draft[key]||[];
+  const items=list.map((b,i)=>{const p=`${key}.${i}`, head=`<div class="blk-h"><span class="eyebrow">${b.kind==='table'&&b.cells&&b.cells.length?'Table':KIND_LABEL[b.kind]}</span>${tools(p)}</div>`;
+    if(b.kind==='text') return `<div class="blk">${head}${ta(`${p}.text`,'',5)}</div>`;
     const typed=b.kind==='table'&&b.cells&&b.cells.length, f=fileByPath(b.file);
     const ok=b.kind==='figure'?!!(f&&f.url):typed||(b.kind==='chart'?!!chartSeries(b):!!rangeCells(b));
     let src;
-    if(b.kind==='figure') src=f&&f.url?`<img class="thumb" src="${f.url}" alt=""><div class="src">${esc(f.path)}</div>`:`<div class="src">${esc(b.file)}</div>`;
+    if(b.kind==='figure') src=`${f&&f.url?`<img class="thumb" src="${f.url}" alt="">`:''}<label class="ed"><span>Photo</span><select data-path="${p}.file">${f?'':opt(b.file,(b.file||'Choose a photo')+(b.file?' (not found)':''),b.file)}${photoFiles().map(x=>opt(x.path,x.path,f&&f.path)).join('')}</select></label>`;
     else if(typed) src=`<table class="edt">${b.cells.map((r,ri)=>`<tr>${r.map((c,ci)=>`<td><input data-path="${p}.cells.${ri}.${ci}" value="${esc(c)}" class="${missCls(c)}"></td>`).join('')}</tr>`).join('')}</table>`;
-    else src=`<div class="two">${inp(`${p}.sheet`,'Sheet')}${inp(`${p}.range`,b.kind==='chart'?`Range (X ${esc(b.x_col)}, Y ${esc((b.y_cols||[]).join(', '))})`:'Range')}</div><div class="src">${esc(f?f.path:b.file)}</div>`;
-    return `<div class="blk"><span class="eyebrow">${b.kind}</span>${inp(`${p}.caption`,'Caption')}${src}${ok?'':'<span class="chip crit">Not found in the files</span>'}</div>`;}).join('');
+    else{
+      const s=sheetOf(b), wb=f&&f.wb;
+      src=`<label class="ed"><span>Excel file</span><select data-path="${p}.file">${wb?'':opt(b.file,(b.file||'Choose a file')+(b.file?' (not found)':''),b.file)}${xlsFiles().map(x=>opt(x.path,x.path,f&&f.path)).join('')}</select></label>
+        <div class="two"><label class="ed"><span>Sheet</span><select data-path="${p}.sheet">${s?'':opt(b.sheet,b.sheet||'—',b.sheet)}${(wb?wb.SheetNames:[]).map(n=>opt(n,n,s&&s.name)).join('')}</select></label>${inp(`${p}.range`,'Range, with the header row')}</div>
+        ${b.kind==='chart'?`<div class="two">${inp(`${p}.x_col`,'X column')}${inp(`${p}.y_cols`,'Y columns (C, D…)')}${inp(`${p}.x_label`,'X axis title')}${inp(`${p}.y_label`,'Y axis title')}</div>`:''}`;
+    }
+    return `<div class="blk">${head}${inp(`${p}.caption`,'Caption')}${src}${ok?'':'<span class="chip crit">Not found in the files</span>'}</div>`;});
+  return (items.join('')||'<p class="empty">Nothing here yet.</p>')
+    +`<div class="adds"><span class="muted">Add</span>${Object.keys(KIND_LABEL).map(k=>`<button type="button" class="btn sm" data-act="ed-add-block" data-arg="${key}|${k}">${KIND_LABEL[k]}</button>`).join('')}</div>`;
 }
+const addBtn=(p,label)=>`<div class="adds"><button type="button" class="btn sm" data-act="ed-add-row" data-arg="${p}">${label}</button></div>`;
 function editorHtml(){
   const d=AI.draft, tpl=AI.tpl||REQ.tpl;
   const sec=(title,inner,open)=>`<details${open||/miss-f|chip crit/.test(inner)?' open':''}><summary>${title}</summary><div class="in">${inner}</div></details>`;   // open where something needs fixing
-  let h=tpl!==REQ.tpl?`<div class="banner">This draft was written for the ${tpl} template. Draft again in step 3 to use the ${REQ.tpl} one.</div>`:'';
+  let h=tpl!==REQ.tpl?`<div class="banner">This report was prepared for the ${tpl} template. Prepare it again in step 3 to use the ${REQ.tpl} one.</div>`:'';
   h+=sec('Test Summary',ta('summary.test_description','Test description')+ta('summary.sample_information','Test sample information',4)+ta('summary.qtp_deviations','QTP deviations')
-    +d.summary.acceptance.map((a,i)=>`<div class="blk">${ta(`summary.acceptance.${i}.criterion`,`Acceptance criterion ${i+1}`)}${sel(`summary.acceptance.${i}.result`,'Pass / Fail',['PASS','FAIL','N/A'])}</div>`).join('')
-    +ta('summary.results_summary','Test results summary',8),true);
+    +d.summary.acceptance.map((a,i)=>`<div class="blk"><div class="blk-h"><span class="eyebrow">Acceptance criterion ${i+1}</span><span class="tools">${ib('ed-del',`summary.acceptance.${i}`,'✕','Remove')}</span></div>${ta(`summary.acceptance.${i}.criterion`,'')}${sel(`summary.acceptance.${i}.result`,'Pass / Fail',['PASS','FAIL','N/A'])}</div>`).join('')
+    +addBtn('summary.acceptance','Add criterion')+ta('summary.results_summary','Test results summary',8),true);
   if(tpl==='complex'){
-    h+=sec('1.1 Samples description',d.samples.map((s,i)=>`<div class="blk two">${inp(`samples.${i}.sn`,'S/N')}${inp(`samples.${i}.pn`,'P/N')}${inp(`samples.${i}.phase`,'Project phase')}${inp(`samples.${i}.drawing_rev`,'Drawing / rev')}${inp(`samples.${i}.description`,'Description')}${inp(`samples.${i}.reception_date`,'Reception date')}</div>`).join('')||'<p class="empty">No samples.</p>');
+    h+=sec('1.1 Samples description',d.samples.map((s,i)=>`<div class="blk"><div class="blk-h"><span class="eyebrow">Sample row ${i+1}</span><span class="tools">${ib('ed-del',`samples.${i}`,'✕','Remove')}</span></div><div class="two">${inp(`samples.${i}.sn`,'S/N')}${inp(`samples.${i}.pn`,'P/N')}${inp(`samples.${i}.phase`,'Project phase')}${inp(`samples.${i}.drawing_rev`,'Drawing / rev')}${inp(`samples.${i}.description`,'Description')}${inp(`samples.${i}.reception_date`,'Reception date')}</div></div>`).join('')+addBtn('samples','Add sample row'));
     h+=sec('Standards and execution description',ta('standards','Standards (empty: the section is left out)',2)+ta('execution_description','Execution description',8)+blocksEd('execution_blocks'));
-    h+=sec('Instruments and environmental conditions',d.instruments.map((r,i)=>`<div class="blk two">${inp(`instruments.${i}.instrument`,'Instrument')}${inp(`instruments.${i}.characteristic`,'Characteristic of control')}${inp(`instruments.${i}.model_code`,'Model / inventory code')}${inp(`instruments.${i}.manufacturer`,'Manufacturer')}${inp(`instruments.${i}.range`,'Range and units')}<div class="two">${inp(`instruments.${i}.last_revision`,'Last revision')}${inp(`instruments.${i}.next_revision`,'Next revision')}</div></div>`).join('')
+    const inPlan=new Set(d.instruments.map(r=>r.code).filter(Boolean));
+    h+=sec('Instruments and environmental conditions',d.instruments.map((r,i)=>`<div class="blk"><div class="blk-h"><span class="eyebrow">${esc(r.code||'Not in the plan')}</span><span class="tools">${ib('ed-del',`instruments.${i}`,'✕','Remove')}</span></div><div class="two">${inp(`instruments.${i}.instrument`,'Instrument')}${inp(`instruments.${i}.characteristic`,'Characteristic of control')}${inp(`instruments.${i}.model_code`,'Model / inventory code')}${inp(`instruments.${i}.manufacturer`,'Manufacturer')}${inp(`instruments.${i}.range`,'Range and units')}<span></span>${inp(`instruments.${i}.last_revision`,'Last revision')}${inp(`instruments.${i}.next_revision`,'Next revision')}</div></div>`).join('')
+      +`<div class="adds"><select data-add="instrument" aria-label="Add an instrument from the calibration plan"><option value="">Add from the calibration plan…</option>${calList().filter(e=>!inPlan.has(e.code)).map(e=>`<option value="${esc(e.code)}">${esc(`${e.code} · ${e.description}`)}</option>`).join('')}</select><button type="button" class="btn sm" data-act="ed-add-row" data-arg="instruments">Add other</button></div>`
       +`<div class="two">${inp('environment.temperature','Temperature')}${inp('environment.humidity','Humidity')}</div>`);
   }
   h+=sec(tpl==='complex'?'2. Results':'Test Results Details',blocksEd('results'));
   h+=sec(tpl==='complex'?'3. Conclusion':'Conclusions',ta('conclusion','Conclusion',8));
-  if(tpl==='complex') h+=sec('4. Annexes (pictures)',d.annexes.map((a,i)=>`<div class="blk">${inp(`annexes.${i}.title`,'Group title')}<div class="pics">${a.pictures.map((p,j)=>{const f=fileByPath(p.file);
-    return `<figure>${f&&f.url?`<img src="${f.url}" alt="">`:`<div class="nopic">${esc(p.file)}</div>`}${inp(`annexes.${i}.pictures.${j}.caption`,'')}</figure>`;}).join('')}</div></div>`).join('')||'<p class="empty">No pictures.</p>');
+  if(tpl==='complex'){
+    const photos=photoFiles();
+    h+=sec('4. Annexes (pictures)',d.annexes.map((a,i)=>`<div class="blk"><div class="blk-h"><span class="eyebrow">Picture group ${i+1}</span>${tools(`annexes.${i}`)}</div>${inp(`annexes.${i}.title`,'Group title')}<div class="pics">${a.pictures.map((p,j)=>{const f=fileByPath(p.file);
+      return `<figure>${f&&f.url?`<img src="${f.url}" alt="">`:`<div class="nopic">${esc(p.file)}</div>`}${ib('ed-del',`annexes.${i}.pictures.${j}`,'✕','Remove picture')}${inp(`annexes.${i}.pictures.${j}.caption`,'')}</figure>`;}).join('')}</div>
+      <div class="adds"><select data-add="picture" data-arg="${i}" aria-label="Add a photo to this group"><option value="">Add a photo…</option>${photos.map(f=>`<option value="${esc(f.path)}">${esc(f.path)}</option>`).join('')}</select></div></div>`).join('')+addBtn('annexes','Add picture group'));
+  }
   return h;
+}
+function rerenderEditor(){
+  const ed=$('#editor'); if(!ed) return;
+  const open=[...ed.querySelectorAll('details')].map(x=>x.open), top=ed.scrollTop;
+  ed.innerHTML=editorHtml(); ed.querySelectorAll('details').forEach((x,i)=>{if(open[i]!=null) x.open=open[i];}); ed.scrollTop=top;
+}
+const ROW={'summary.acceptance':()=>({criterion:'',result:'N/A'}),samples:n=>({sn:`Samples #${n+1}`,pn:'',phase:'',drawing_rev:'N/A',description:'',reception_date:'N/A'}),
+  instruments:()=>({code:'',instrument:'',characteristic:'',model_code:'',manufacturer:'',range:'',last_revision:'N/A',next_revision:'N/A'}),annexes:()=>({title:'Pictures',pictures:[]})};
+/* Default source for a new table or chart: the first Excel sheet with data, all of it. */
+function sourceBlock(kind,o={}){
+  const f=xlsFiles()[0], name=f&&f.wb.SheetNames.find(n=>f.wb.Sheets[n]['!ref']);
+  const b=newBlock(kind,{file:f?f.path:'',sheet:name||'',range:name?f.wb.Sheets[name]['!ref']:'',...o});
+  if(kind==='chart') chartDefaults(b);
+  return b;
+}
+function chartDefaults(b){const s=sheetOf(b), r=s&&rangeOf(s.ws,b.range); if(r){b.x_col=XLSX.utils.encode_col(r.s.c); b.y_cols=r.e.c>r.s.c?[XLSX.utils.encode_col(r.s.c+1)]:[];}}
+function editAction(act,arg){
+  const d=AI.draft; if(!d) return;
+  if(act==='ed-add-block'){const [key,kind]=arg.split('|'), ph=photoFiles()[0];
+    d[key].push(kind==='text'?newBlock('text'):kind==='figure'?newBlock('figure',{file:ph?ph.path:'',caption:ph?baseName(ph.path):''}):sourceBlock(kind));}
+  if(act==='ed-add-row') getP(d,arg).push(ROW[arg](getP(d,arg).length));
+  if(act==='ed-del'||act==='ed-up'||act==='ed-down'){
+    const ks=arg.split('.'), i=+ks.pop(), list=getP(d,ks.join('.'));
+    if(act==='ed-del') list.splice(i,1);
+    else{const j=i+(act==='ed-up'?-1:1); if(j<0||j>=list.length) return; [list[i],list[j]]=[list[j],list[i]];}
+  }
+  editorChanged(true);
+}
+function editorChanged(rebuild){
+  AI.edited=true; if(rebuild) rerenderEditor(); renderReview(); renderFinalBar(); schedulePdf(rebuild?300:undefined);
 }
 function renderFinal(){
   const box=$('#final'); $('#s4').classList.toggle('off',!AI.draft);
@@ -947,7 +1081,9 @@ function renderFinal(){
     box._d=AI.draft; box._tpl=REQ.tpl;
     box.innerHTML=`<div class="final-bar" id="final-bar"></div><div class="final-grid"><div class="editor" id="editor">${editorHtml()}</div><iframe class="pdf" id="pdf-frame" title="Report PDF"></iframe></div>`;
     if(PDF.url) $('#pdf-frame').src=PDF.url;
+    box._nf=FILES.length;
   }
+  if(box._nf!==FILES.length){box._nf=FILES.length; rerenderEditor();}   // new photos and sheets appear in the lists
   renderFinalBar();
 }
 
@@ -958,23 +1094,41 @@ $('#plr').addEventListener('change',e=>setPlr(e.target.value));
 $('#plr').addEventListener('input',e=>{const v=e.target.value.trim().toUpperCase(); if(/^PLR\d{6}$/.test(v)) setPlr(v);});
 document.querySelectorAll('input[name="tpl"]').forEach(r=>r.addEventListener('change',e=>{REQ.tpl=e.target.value; markStale(); render();}));
 document.addEventListener('change',e=>{
+  const add=e.target.dataset.add;
+  if(add&&e.target.value&&AI.draft){
+    if(add==='instrument') AI.draft.instruments.push(fillInstrument({code:e.target.value,instrument:'',characteristic:'',model_code:'',manufacturer:'',range:'',last_revision:'',next_revision:''}));
+    if(add==='picture') AI.draft.annexes[+e.target.dataset.arg].pictures.push({file:e.target.value,caption:baseName(e.target.value)});
+    return editorChanged(true);
+  }
   if(e.target.dataset.solve!=null){const k=+e.target.dataset.solve; e.target.checked?AI.solved.add(k):AI.solved.delete(k); renderReview(); renderFinalBar(); return;}
   if(e.target.closest('#qtp-box')&&e.target.type==='checkbox'){e.target.checked?REQ.qtps.add(e.target.value):REQ.qtps.delete(e.target.value); prefillMeta(); markStale(); render();}});
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]'); if(a){e.preventDefault(); if(a.dataset.act==='gh') openGh(); if(a.dataset.act==='close-prev'){selFile=null; renderFiles();}
-    if(a.dataset.act==='ai-signin') signIn(); if(a.dataset.act==='ai-draft') draftReport(); if(a.dataset.act==='ai-out') AI.client.auth.signOut(); if(a.dataset.act==='finish') clearAll(); return;}
+    if(a.dataset.act==='ai-signin') signIn(); if(a.dataset.act==='ai-draft') draftReport(); if(a.dataset.act==='ai-out') AI.client.auth.signOut(); if(a.dataset.act==='finish') clearAll(); if(a.dataset.act==='local-draft') prepareLocal(); if(a.dataset.act.startsWith('ed-')) editAction(a.dataset.act,a.dataset.arg); return;}
   const r=e.target.closest('[data-file]'); if(r){const i=+r.dataset.file; selFile=selFile===i?null:i; renderFiles();}
 });
 document.addEventListener('input',e=>{
   const t=e.target;
   if(t.id==='ai-answers'){const had=!!AI.answers.trim(); AI.answers=t.value; if(had!==!!AI.answers.trim()) renderAiButton();}
   if(t.dataset.meta){META[t.dataset.meta]=t.value; META.edited.add(t.dataset.meta); renderReview(); renderFinalBar(); schedulePdf();}
-  if(t.dataset.path&&AI.draft){setP(AI.draft,t.dataset.path,t.value); AI.edited=true; t.classList.toggle('miss-f',/\[MISSING:/.test(t.value)); renderReview(); renderFinalBar(); schedulePdf();}
+  if(t.dataset.path&&AI.draft){
+    const p=t.dataset.path;
+    setP(AI.draft,p,/\.y_cols$/.test(p)?t.value.toUpperCase().split(/[\s,;]+/).filter(Boolean):t.value);
+    t.classList.toggle('miss-f',/\[MISSING:/.test(t.value));
+    if(t.tagName==='SELECT'&&/\.(file|sheet)$/.test(p)){   // another file or sheet: take its whole used range
+      const b=getP(AI.draft,p.replace(/\.(file|sheet)$/,''));
+      if(b.kind!=='figure'){const f=fileByPath(b.file);
+        if(p.endsWith('.file')) b.sheet=f&&f.wb?f.wb.SheetNames.find(n=>f.wb.Sheets[n]['!ref'])||'':'';
+        const s=sheetOf(b); b.range=s?s.ws['!ref']:''; if(b.kind==='chart') chartDefaults(b);}
+      return editorChanged(true);
+    }
+    editorChanged(false);
+  }
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest&&e.target.closest('[data-file]'); if(r) r.click();}});
 $('#btn-gh').onclick=openGh;
 const q=new URLSearchParams(location.search).get('plr'); if(q){$('#plr').value=q;}
-render(); initAi(); loadDb().then(()=>{if(q) setPlr(q);});
+render(); if(AI_ON) initAi(); loadDb().then(()=>{if(q) setPlr(q);});
 </script>
 </body>
 </html>
