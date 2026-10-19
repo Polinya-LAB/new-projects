@@ -476,7 +476,14 @@ function representative(list,max){
   }
   return good.sort((a,b)=>a.path.localeCompare(b.path,undefined,{numeric:true}));
 }
-const MAX_GROUP_PHOTOS=6, MAX_SIMPLE_PHOTOS=6;
+/* Picture groups in the order of the test: before and set-up first, then the stages by their hours or days, the end last. */
+function stageRank(title){
+  const t=String(title||'').toLowerCase(), num=parseFloat((t.match(/\d+(?:[.,]\d+)?/)||['0'])[0].replace(',','.'));
+  const r=/before|antes|initial|inicial|set.?up|montaje|reception|recep|sample|muestra/.test(t)&&!/after|despu/.test(t)?0:/final|end\b|fin\b|conclu/.test(t)?3:/after|despu/.test(t)?2:1;
+  return r*1e6+num;
+}
+const byStage=list=>list.map((x,i)=>[x,i]).sort((a,b)=>stageRank(a[0].title)-stageRank(b[0].title)||a[1]-b[1]).map(x=>x[0]);
+const MAX_GROUP_PHOTOS=12;   // per folder, after leaving out repeated and blurred shots: better one photo too many than one missing
 async function extract(f){
   f.state='reading';
   try{
@@ -582,7 +589,7 @@ function checks(){
         if(!(b.kind==='chart'?chartSeries(b):rangeCells(b))) add('crit',`The ${b.kind} "${b.caption}" points to data that is not in the files (${b.file} › ${b.sheet} › ${b.range}).`,'Correct the sheet or the range in step 4.');
       }
     }
-    if(tpl==='complex') for(const a of d.annexes) for(const p of a.pictures){const f=fileByPath(p.file); if(f) used.add(f.path); else add('crit',`The picture "${p.caption}" is not in the folder (${p.file}).`,'Add the photo in step 2, or ask the AI to remove it.');}
+    for(const a of d.annexes) for(const p of a.pictures){const f=fileByPath(p.file); if(f) used.add(f.path); else add('crit',`The picture "${p.caption}" is not in the folder (${p.file}).`,'Add the photo in step 2, or ask the AI to remove it.');}
     const unused=FILES.filter(f=>f.kind==='image'&&!used.has(f.path));
     if(unused.length&&FILES.some(f=>f.kind==='image')) add('info',`${unused.length} photo${unused.length>1?'s are':' is'} not in the report: ${unused.slice(0,4).map(f=>f.name).join(', ')}${unused.length>4?'…':''}.`,'Nothing to do if they are not needed. Otherwise ask the AI in step 3 where to put them.');
     if(tpl==='complex') for(const r of d.instruments){const e=calByCode(r.code); if(!e) continue;
@@ -647,14 +654,13 @@ function localDraft(){
   const root=FILES.length&&FILES.every(f=>f.path.includes('/'))&&new Set(FILES.map(f=>f.path.split('/')[0])).size===1?FILES[0].path.split('/')[0]+'/':'';
   const groups=new Map();
   for(const p of photos){const rel=p.path.slice(root.length), dir=rel.includes('/')?rel.slice(0,rel.lastIndexOf('/')):''; if(!groups.has(dir)) groups.set(dir,[]); groups.get(dir).push(p);}
-  const per=tpl==='simple'?Math.max(1,Math.ceil(MAX_SIMPLE_PHOTOS/Math.max(1,groups.size))):MAX_GROUP_PHOTOS;
+  const per=MAX_GROUP_PHOTOS;
   const chosen=[...groups].map(([dir,list])=>[dir,representative(list,per)]), nChosen=chosen.reduce((s,[,l])=>s+l.length,0);
-  const annexes=chosen.map(([dir,list])=>({title:dir?dir.replace(/\//g,' – '):'Pictures of the test',pictures:list.map(p=>({file:p.path,caption:baseName(p.path)}))}));
-  if(photos.length>nChosen) issues.push({severity:'info',title:`${nChosen} of the ${photos.length} photos were chosen for the report.`,fix:'Repeated and blurred shots were left out, keeping up to '+(tpl==='simple'?MAX_SIMPLE_PHOTOS+' in total':MAX_GROUP_PHOTOS+' per folder')+'. Add or remove photos in step 4.',source:''});
-  if(photos.length) issues.push({severity:'warn',title:'Check the photo captions: they are the file names.',fix:tpl==='complex'?'Write them in step 4 (Annexes), e.g. "Sample #1 after 240 h".':'Write them in step 4 (Test Results Details).',source:''});
+  const annexes=byStage(chosen.map(([dir,list])=>({title:dir?dir.replace(/\//g,' – '):'Pictures of the test',pictures:list.map(p=>({file:p.path,caption:baseName(p.path)}))})));
+  if(photos.length>nChosen) issues.push({severity:'info',title:`${nChosen} of the ${photos.length} photos were chosen for the report.`,fix:'Repeated and blurred shots were left out, keeping up to '+MAX_GROUP_PHOTOS+' per folder. Add or remove photos in step 4.',source:''});
+  if(photos.length) issues.push({severity:'warn',title:'Check the photo captions: they are the file names.',fix:`Write them in step 4 (${tpl==='complex'?'Annexes':'Pictures'}), e.g. "Sample #1 after 240 h".`,source:''});
   issues.push({severity:'warn',title:`Check the QTP deviations: the report says there were none.`,fix:'Change the text in step 4 (Test Summary) if there were any.',source:''});
-  const results=[newBlock('text',{text:tpl==='complex'?'[MISSING: results per sample and criterion]':'[MISSING: short description of the results]'}),...tables,
-    ...(tpl==='simple'?chosen.flatMap(([,l])=>l).slice(0,MAX_SIMPLE_PHOTOS).map(p=>newBlock('figure',{file:p.path,caption:baseName(p.path)})):[])];
+  const results=[newBlock('text',{text:tpl==='complex'?'[MISSING: results per sample and criterion]':'[MISSING: short description of the results]'}),...tables];
   const simpleFits=ts.length===1&&photos.length<=10;
   return {
     template_advice:{recommended:simpleFits?'simple':'complex',reason:simpleFits?`It is one test with ${photos.length} photo${photos.length!==1?'s':''}.`:`It has ${ts.length} test${ts.length>1?'s':''} and ${photos.length} photos.`},
@@ -671,7 +677,7 @@ function localDraft(){
     execution_blocks:[], instruments,
     environment:{temperature:'[MISSING: temperature]',humidity:'[MISSING: humidity]'},
     results, conclusion:`[MISSING: conclusion]${t0.result&&t0.result!=='N/A'?`\n\nThe overall test result is ${res(t0.result)}.`:''}`,
-    annexes:tpl==='complex'?annexes:[], overall_result:res(t0.result)};
+    annexes, overall_result:res(t0.result)};
 }
 function prepareLocal(){
   if(AI.draft&&AI.edited&&!confirm('Preparing the report again replaces the changes made in step 4. Continue?')) return;
@@ -883,8 +889,9 @@ function caption(kind,n,text,tpl){
   return {text:`${kind} ${n}. ${text||''}`,alignment:'center',fontSize:9,margin:kind==='Table'?[0,8,0,3]:[0,3,0,10],headlineLevel:kind==='Table'?1:undefined};
 }
 async function blocks(list,tpl,n){
-  const out=[];
-  for(const b of list||[]){
+  const out=[]; let skip=0; list=list||[];
+  for(const b of list){
+    if(skip){skip--; continue;}
     if(b.kind==='text'){out.push({stack:paras(b.text),margin:[0,0,0,8]}); continue;}
     if(b.kind==='table'){
       const rows=b.cells&&b.cells.length?b.cells:rangeCells(b), cap=caption('Table',++n.table,b.caption,tpl);
@@ -895,9 +902,9 @@ async function blocks(list,tpl,n){
       const img=await chartImage(b);
       out.push(img?{image:img,width:430,alignment:'center',margin:[0,8,0,2]}:{text:rich(`[MISSING: data of the chart "${b.caption}"]`)},caption('Figure',++n.figure,b.caption,tpl)); continue;
     }
-    if(b.kind==='figure'){
-      const f=fileByPath(b.file), img=f&&f.kind==='image'&&f.url?await pdfPhoto(f):null;
-      out.push(img?{image:img,fit:[400,300],alignment:'center',margin:[0,8,0,2]}:{text:rich(`[MISSING: photo ${b.file}]`)},caption('Figure',++n.figure,b.caption,tpl));
+    if(b.kind==='figure'){   // photos go in picture boxes, as in the lab templates; a run of photos shares one grid
+      const run=[b]; while(list[list.indexOf(run[run.length-1])+1]?.kind==='figure') run.push(list[list.indexOf(run[run.length-1])+1]);
+      out.push(...await pictureGrid(run.map(x=>({file:x.file,caption:x.caption})),n,null)); skip=run.length-1;
     }
   }
   return out;
@@ -913,7 +920,7 @@ async function pictureGrid(pics,n,title){
   if(cells.length%2) cells.push({text:''});
   const body=[]; for(let i=0;i<cells.length;i+=2) body.push([cells[i],cells[i+1]]);
   const tbl=rows=>({table:{widths:['*','*'],body:rows,dontBreakRows:true},layout:{...grid(0.75,'#7F7F7F'),paddingLeft:()=>0,paddingRight:()=>0,paddingTop:()=>0,paddingBottom:()=>0}});
-  return [{stack:[title,tbl(body.slice(0,1))],unbreakable:true},...(body.length>1?[tbl(body.slice(1))]:[]),{text:'',margin:[0,0,0,10]}];
+  return [{stack:[title||{text:''},tbl(body.slice(0,1))],unbreakable:true},...(body.length>1?[tbl(body.slice(1))]:[]),{text:'',margin:[0,0,0,10]}];
 }
 function headerTable(logo,tpl){
   const c=t=>({text:t||' ',bold:true,fontSize:8.5,margin:[3,3,3,2]});
@@ -923,19 +930,20 @@ function headerTable(logo,tpl){
     [{text:'Qualification Test Results',bold:true,fontSize:15,color:'white',fillColor:NAVY,alignment:'center',margin:[0,2,0,1]},c((tpl==='simple'?'Title: ':'')+META.title),c(META.project)]]},
     layout:grid(0.75,LINE)};
 }
-function summaryTable(d){
-  const s=d.summary, full=x=>[{...x,colSpan:2},''];
-  const bar=(t,o={})=>({text:t,bold:true,fontSize:10.5,fillColor:BAR,margin:[5,2,4,2],...o});
-  const box=t=>({stack:paras(t),margin:[3,3,3,5]});
+/* Test Summary on page 1. k scales its text down when it would not fit on the first page (see fitSummary). */
+function summaryTable(d,k=1){
+  const s=d.summary, full=x=>[{...x,colSpan:2},''], f=v=>Math.round(v*k*10)/10;
+  const bar=(t,o={})=>({text:t,bold:true,fontSize:f(10.5),fillColor:BAR,margin:[5,2*k,4,2*k],...o});
+  const box=t=>({stack:paras(t),fontSize:f(9.5),lineHeight:k<1?1.05:1.15,margin:[3,3*k,3,5*k]});
   const acc=s.acceptance.length?s.acceptance:[{criterion:'[MISSING: acceptance criteria]',result:'N/A'}];
   return {table:{widths:['*',112],body:[
-    full({text:'Test Summary',bold:true,fontSize:11,color:'white',fillColor:NAVY,alignment:'center',margin:[0,2,0,2]}),
+    full({text:'Test Summary',bold:true,fontSize:f(11),color:'white',fillColor:NAVY,alignment:'center',margin:[0,2,0,2]}),
     full(bar('Test Description')), full(box(s.test_description)),
     full(bar('Test Sample Information')), full(box(s.sample_information)),
     full(bar('QTP Deviations')), full(box(s.qtp_deviations)),
     [bar('Acceptance Criteria'),bar('Pass / Fail',{alignment:'center'})],
-    ...acc.map(a=>[box(a.criterion),{text:a.result,bold:true,fontSize:11,alignment:'center',fillColor:a.result==='PASS'?PASS_FILL:a.result==='FAIL'?FAIL_FILL:null,margin:[2,10,2,10]}]),
-    full(bar('Test Results Summary')), full(box(s.results_summary))]},
+    ...acc.map(a=>[box(a.criterion),{text:a.result,bold:true,fontSize:f(11),alignment:'center',fillColor:a.result==='PASS'?PASS_FILL:a.result==='FAIL'?FAIL_FILL:null,margin:[2,10*k,2,10*k]}]),
+    full(bar('Test Results Summary')), full({...box(s.results_summary),id:'sum-end'})]},
     layout:grid(0.75,LINE)};
 }
 async function complexBody(d,n){
@@ -965,22 +973,34 @@ async function complexBody(d,n){
   return out;
 }
 async function simpleBody(d,n){
-  return [{text:'Test Results Details',style:'simpleH',pageBreak:'before'},...await blocks(d.results,'simple',n),
+  const pics=[];
+  for(const a of d.annexes) if(a.pictures.length) pics.push(...await pictureGrid(a.pictures,n,a.title?{text:String(a.title),bold:true,fontSize:10,margin:[0,8,0,5]}:null));
+  return [{text:'Test Results Details',style:'simpleH',pageBreak:'before'},...await blocks(d.results,'simple',n),...pics,
           {text:'Conclusions',style:'simpleH',pageBreak:'before'},...paras(d.conclusion)];
+}
+/* The Test Summary must stay on page 1: a summary-only document is laid out at decreasing text sizes until it fits. */
+async function fitSummary(d,base){
+  for(let k=1;;k=Math.round((k-0.06)*100)/100){
+    if(k<0.65) return 0.65;
+    PDF.sumPages=null;
+    await new Promise((res,rej)=>{try{pdfMake.createPdf(base([summaryTable(d,k)])).getBuffer(res);}catch(e){rej(e);}});
+    if(!PDF.sumPages||Math.max(...PDF.sumPages)<=1) return k;
+  }
 }
 async function docDef(final){
   const d=AI.draft, tpl=AI.tpl||REQ.tpl, n={table:0,figure:0,picture:0}, logo=await logoData();
-  const content=[summaryTable(d),...(tpl==='complex'?await complexBody(d,n):await simpleBody(d,n))];
-  return {pageSize:'LETTER',pageMargins:[36,112,36,44],
+  const base=content=>({pageSize:'LETTER',pageMargins:[36,112,36,44],
     info:{title:`${META.number} ${META.title}`,author:META.author,subject:'Qualification Test Results',creator:'Laboratorio Polinyà · Test Reports'},
     header:()=>headerTable(logo,tpl),
-    pageBreakBefore:node=>node.headlineLevel===1&&node.startPosition.top>660,   // no heading or table caption in the last lines of a page
+    pageBreakBefore:node=>{if(node.id==='sum-end') PDF.sumPages=node.pageNumbers; return node.headlineLevel===1&&node.startPosition.top>660;},   // no heading or table caption in the last lines of a page
     footer:p=>({text:String(p),alignment:'center',fontSize:9,margin:[0,16,0,0]}),
     watermark:final?undefined:{text:'DRAFT',color:'#B8322B',opacity:0.1,bold:true},
     defaultStyle:{font:'Roboto',fontSize:9.5,lineHeight:1.15},
     styles:{h1:{bold:true,fontSize:10.5,color:HCOL,margin:[0,14,0,6]},h2:{bold:true,fontSize:10,color:HCOL,margin:[4,10,0,6]},
       index:{fontSize:16,color:'#2F5496',alignment:'right',margin:[0,0,0,16]},simpleH:{bold:true,fontSize:12,alignment:'center',decoration:'underline',margin:[0,0,0,14]}},
-    content};
+    content});
+  const k=PDF.sumScale=await fitSummary(d,base);
+  return base([summaryTable(d,k),...(tpl==='complex'?await complexBody(d,n):await simpleBody(d,n))]);
 }
 /* ---------- Word version ----------
    The same report as the PDF, built with docx in this browser: same header on every page, Test Summary table, sections,
@@ -989,6 +1009,7 @@ const tw=pt=>Math.round(pt*20), hp=pt=>Math.round(pt*2), hex=c=>c.replace('#',''
 function wRuns(s,o={}){
   return String(s??'').split(/(\[MISSING:[^\]]*\])/).filter(Boolean).map(p=>new docx.TextRun({text:p,...o,...(p.startsWith('[MISSING:')?{highlight:'yellow',color:'B8322B'}:{})}));
 }
+const wParasRaw=(t,o)=>wParas(t,o);
 function wParas(t,o={}){
   const out=[], size=hp(o.size||9.5), blocks=String(t||'').replace(/\r/g,'').trim().split(/\n[ \t]*\n/).filter(b=>b.trim());
   blocks.forEach((b,bi)=>{const lines=b.split('\n');
@@ -1020,8 +1041,9 @@ function wCaption(kind,n,text,tpl){
   return new docx.Paragraph({alignment:docx.AlignmentType.CENTER,spacing:kind==='Table'?{before:160,after:60}:{before:60,after:200},keepNext:kind==='Table',children:wRuns(`${kind} ${n}. ${text||''}`,{size:18})});
 }
 async function wBlocks(list,tpl,n){
-  const out=[];
-  for(const b of list||[]){
+  const out=[]; let skip=0; list=list||[];
+  for(const b of list){
+    if(skip){skip--; continue;}
     if(b.kind==='text'){out.push(...wParas(b.text)); continue;}
     if(b.kind==='table'){
       const rows=b.cells&&b.cells.length?b.cells:rangeCells(b), cap=wCaption('Table',++n.table,b.caption,tpl);
@@ -1032,9 +1054,9 @@ async function wBlocks(list,tpl,n){
       const img=await chartImage(b);
       out.push(img?new docx.Paragraph({alignment:docx.AlignmentType.CENTER,spacing:{before:160},keepNext:true,children:[await wImage(img,430,240)]}):wP(`[MISSING: data of the chart "${b.caption}"]`),wCaption('Figure',++n.figure,b.caption,tpl)); continue;
     }
-    if(b.kind==='figure'){
-      const f=fileByPath(b.file), img=f&&f.kind==='image'&&f.url?await pdfPhoto(f):null;
-      out.push(img?new docx.Paragraph({alignment:docx.AlignmentType.CENTER,spacing:{before:160},keepNext:true,children:[await wImage(img,400,300)]}):wP(`[MISSING: photo ${b.file}]`),wCaption('Figure',++n.figure,b.caption,tpl));
+    if(b.kind==='figure'){   // a run of photos shares one grid of picture boxes, as in the PDF
+      const run=[b]; while(list[list.indexOf(run[run.length-1])+1]?.kind==='figure') run.push(list[list.indexOf(run[run.length-1])+1]);
+      out.push(await wPictureGrid(run.map(x=>({file:x.file,caption:x.caption})),n),wP('',{after:200})); skip=run.length-1;
     }
   }
   return out;
@@ -1059,16 +1081,17 @@ async function wHeader(tpl,final){
     new docx.TableRow({children:[wCell(wP('Qualification Test Results',{bold:true,size:15,color:'#FFFFFF',align:docx.AlignmentType.CENTER}),{fill:NAVY,width:232}),c((tpl==='simple'?'Title: ':'')+META.title,180),c(META.project,128)]})]});
   return new docx.Header({children:[t,...(final?[]:[wP('DRAFT',{bold:true,size:14,color:'#B8322B',align:docx.AlignmentType.RIGHT,before:60})])]});
 }
-function wSummary(d){
-  const s=d.summary, full=(ch,o={})=>new docx.TableRow({children:[wCell(ch,{...o,span:2,width:W_CONTENT})]});
-  const bar=t=>wP(t,{bold:true,size:10.5}), acc=s.acceptance.length?s.acceptance:[{criterion:'[MISSING: acceptance criteria]',result:'N/A'}];
+function wSummary(d,k=1){   // k: the text scale that keeps the summary on page 1 in the PDF
+  const s=d.summary, full=(ch,o={})=>new docx.TableRow({children:[wCell(ch,{...o,span:2,width:W_CONTENT})]}), f=v=>Math.round(v*k*2)/2;
+  const wParas=t=>wParasRaw(t,{size:f(9.5)});
+  const bar=t=>wP(t,{bold:true,size:f(10.5)}), acc=s.acceptance.length?s.acceptance:[{criterion:'[MISSING: acceptance criteria]',result:'N/A'}];
   return new docx.Table({width:{size:tw(W_CONTENT),type:docx.WidthType.DXA},columnWidths:[tw(W_CONTENT-112),tw(112)],borders:wBorder(0.75,LINE),rows:[
-    full(wP('Test Summary',{bold:true,size:11,color:'#FFFFFF',align:docx.AlignmentType.CENTER}),{fill:NAVY}),
+    full(wP('Test Summary',{bold:true,size:f(11),color:'#FFFFFF',align:docx.AlignmentType.CENTER}),{fill:NAVY}),
     full(bar('Test Description'),{fill:BAR}), full(wParas(s.test_description)),
     full(bar('Test Sample Information'),{fill:BAR}), full(wParas(s.sample_information)),
     full(bar('QTP Deviations'),{fill:BAR}), full(wParas(s.qtp_deviations)),
-    new docx.TableRow({children:[wCell(bar('Acceptance Criteria'),{fill:BAR,width:W_CONTENT-112}),wCell(wP('Pass / Fail',{bold:true,size:10.5,align:docx.AlignmentType.CENTER}),{fill:BAR,width:112})]}),
-    ...acc.map(a=>new docx.TableRow({children:[wCell(wParas(a.criterion),{width:W_CONTENT-112}),wCell(wP(a.result,{bold:true,size:11,align:docx.AlignmentType.CENTER}),{width:112,fill:a.result==='PASS'?PASS_FILL:a.result==='FAIL'?FAIL_FILL:null})]})),
+    new docx.TableRow({children:[wCell(bar('Acceptance Criteria'),{fill:BAR,width:W_CONTENT-112}),wCell(wP('Pass / Fail',{bold:true,size:f(10.5),align:docx.AlignmentType.CENTER}),{fill:BAR,width:112})]}),
+    ...acc.map(a=>new docx.TableRow({children:[wCell(wParas(a.criterion),{width:W_CONTENT-112}),wCell(wP(a.result,{bold:true,size:f(11),align:docx.AlignmentType.CENTER}),{width:112,fill:a.result==='PASS'?PASS_FILL:a.result==='FAIL'?FAIL_FILL:null})]})),
     full(bar('Test Results Summary'),{fill:BAR}), full(wParas(s.results_summary))]});
 }
 async function wComplex(d,n){
@@ -1100,7 +1123,11 @@ async function wordBlob(final){
   await loadScript(JSD+'docx@8.5.0/build/index.umd.js');
   const d=AI.draft, tpl=AI.tpl||REQ.tpl, n={table:0,figure:0,picture:0};
   const simpleH=t=>wP(t,{bold:true,size:12,underline:true,align:docx.AlignmentType.CENTER,pageBreak:true,after:280});
-  const body=tpl==='complex'?await wComplex(d,n):[simpleH('Test Results Details'),...await wBlocks(d.results,'simple',n),simpleH('Conclusions'),...wParas(d.conclusion)];
+  let body;
+  if(tpl==='complex') body=await wComplex(d,n);
+  else{ body=[simpleH('Test Results Details'),...await wBlocks(d.results,'simple',n)];
+    for(const a of d.annexes) if(a.pictures.length) body.push(...(a.title?[wP(String(a.title),{bold:true,size:10,before:160,after:100,keepNext:true})]:[]),await wPictureGrid(a.pictures,n),wP('',{after:200}));
+    body.push(simpleH('Conclusions'),...wParas(d.conclusion)); }
   const doc=new docx.Document({creator:META.author||'Laboratorio Polinyà',title:`${META.number} ${META.title}`,subject:'Qualification Test Results',
     features:{updateFields:tpl==='complex'},
     styles:{default:{document:{run:{font:'Arial',size:19}}},
@@ -1109,7 +1136,7 @@ async function wordBlob(final){
     sections:[{properties:{page:{size:{width:tw(612),height:tw(792)},margin:{top:tw(112),bottom:tw(44),left:tw(36),right:tw(36),header:tw(24),footer:tw(16)}}},
       headers:{default:await wHeader(tpl,final)},
       footers:{default:new docx.Footer({children:[new docx.Paragraph({alignment:docx.AlignmentType.CENTER,children:[new docx.TextRun({children:[docx.PageNumber.CURRENT],size:18})]})]})},
-      children:[wSummary(d),...body]}]});
+      children:[wSummary(d,PDF.sumScale||1),...body]}]});
   return docx.Packer.toBlob(doc);
 }
 /* Saves a file made in this page. */
@@ -1147,7 +1174,7 @@ function finalState(){
   let missing=0;
   if(AI.draft){   // only what the template prints: the simple one has no samples, instruments or annexes
     const {issues,template_advice,...rest}=AI.draft, d=AI.draft;
-    const printed=(AI.tpl||REQ.tpl)==='simple'?{title:d.title,summary:d.summary,results:d.results,conclusion:d.conclusion}:rest;
+    const printed=(AI.tpl||REQ.tpl)==='simple'?{title:d.title,summary:d.summary,results:d.results,conclusion:d.conclusion,annexes:d.annexes}:rest;
     missing=(JSON.stringify(printed).match(/\[MISSING:/g)||[]).length;}
   const stale=AI.stale&&AI.source==='ai';   // a report prepared without AI is completed by hand, so new files do not block it
   return {todo,missing,stale,final:!!AI.draft&&!todo&&!missing&&!stale};
@@ -1214,9 +1241,9 @@ function editorHtml(){
   }
   h+=sec(tpl==='complex'?'2. Results':'Test Results Details',blocksEd('results'));
   h+=sec(tpl==='complex'?'3. Conclusion':'Conclusions',ta('conclusion','Conclusion',8));
-  if(tpl==='complex'){
+  {
     const photos=photoFiles();
-    h+=sec('4. Annexes (pictures)',d.annexes.map((a,i)=>`<div class="blk"><div class="blk-h"><span class="eyebrow">Picture group ${i+1}</span>${tools(`annexes.${i}`)}</div>${inp(`annexes.${i}.title`,'Group title')}<div class="pics">${a.pictures.map((p,j)=>{const f=fileByPath(p.file);
+    h+=sec(tpl==='complex'?'4. Annexes (pictures)':'Pictures (in Test Results Details)',d.annexes.map((a,i)=>`<div class="blk"><div class="blk-h"><span class="eyebrow">Picture group ${i+1}</span>${tools(`annexes.${i}`)}</div>${inp(`annexes.${i}.title`,'Group title')}<div class="pics">${a.pictures.map((p,j)=>{const f=fileByPath(p.file);
       return `<figure>${f&&f.url?`<img src="${f.url}" alt="">`:`<div class="nopic">${esc(p.file)}</div>`}${ib('ed-del',`annexes.${i}.pictures.${j}`,'✕','Remove picture')}${inp(`annexes.${i}.pictures.${j}.caption`,'')}</figure>`;}).join('')}</div>
       <div class="adds"><select data-add="picture" data-arg="${i}" aria-label="Add a photo to this group"><option value="">Add a photo…</option>${photos.map(f=>`<option value="${esc(f.path)}">${esc(f.path)}</option>`).join('')}</select></div></div>`).join('')+addBtn('annexes','Add picture group'));
   }
