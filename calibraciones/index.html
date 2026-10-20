@@ -63,7 +63,7 @@ a{color:var(--accent)}
 .gh.on i{background:var(--ok)} .gh.bad i{background:var(--crit)} .gh.busy i{background:var(--warn)}
 .gh.on{color:var(--fg)}
 /* Read-only (not connected, or no write access): editing controls are hidden. */
-body.ro :is([data-act="eq-new"],[data-act="cal-new"],[data-act="cal-plan"],[data-act="ev-new"],[data-act="mt-new"],[data-act="note-done"],[data-act="settings"],[data-act="pt-add"],[data-act="pt-del"],[data-act="res-add"],[data-act="cert-pdf"],[data-act="res-del"],[data-act="del"],[data-act="do-import"],[data-dz]){display:none!important}
+body.ro :is([data-act="eq-new"],[data-act="cal-new"],[data-act="cal-plan"],[data-act="ev-new"],[data-act="mt-new"],[data-act="note-done"],[data-act="settings"],[data-act="pt-add"],[data-act="pt-del"],[data-act="res-add"],[data-act="cert-reg"],[data-act="res-del"],[data-act="del"],[data-act="do-import"],[data-dz]){display:none!important}
 body.ro .dlg-f button[type="submit"]:not(.gh-ok){display:none}
 body.ro :is(input[data-tog],select[data-tol]){pointer-events:none;opacity:.6}
 
@@ -267,6 +267,8 @@ fieldset.pts{display:block}
 @media (max-width:600px){.view-h h2{font-size:22px}.brand h1{font-size:19px}.search{width:100%}.mrow{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .checks{display:grid;gap:4px}
+.cert{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;margin-bottom:8px;display:grid;gap:6px;background:var(--surface)}
+details.manual{margin-top:10px} details.manual>summary{cursor:pointer;font-weight:600;font-size:14px;margin-bottom:8px}
 .res-head,.res-row{display:grid;grid-template-columns:70px repeat(6,minmax(0,1fr)) minmax(0,1.8fr) 30px;gap:5px}
 .res-head{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
 .res-row{margin-bottom:5px}
@@ -385,11 +387,11 @@ const CAL_LABEL={valid:'Valid',soon:'Due soon',overdue:'Overdue',nok:'Out of tol
 const ACTION_KEYS=['overdue','nok','soon','pending','nodata'];
 const OFF_KEYS=['notreq','beforeuse','reserved','retired','oos'];
 const KEY_RANK={overdue:0,nok:1,soon:2,pending:3,nodata:4,valid:5,beforeuse:6,notreq:7,oos:8,retired:9,reserved:10};
-const ISSUE={dupcode:'Duplicated inventory code',dupserial:'Serial number shared with other equipment',nextdiff:'Next date does not match last + period',
+const ISSUE={certnoreg:'Certificate in SharePoint not registered',dupcode:'Duplicated inventory code',dupserial:'Serial number shared with other equipment',nextdiff:'Next date does not match last + period',
   nextbefore:'Next date not after the last calibration',lastfuture:'Last calibration in the future',noperiod:'Calibration period missing',nodates:'Last calibration missing',
   plannedpast:'Planned month already passed',import:'Notes from the Excel import',tudiff:'TU differs from the plan tolerance',notol:'Tolerance missing',
   noserial:'Serial number missing',nolab:'Calibration lab to be defined',noprice:'Offer price to be defined',noenac:'ENAC accreditation to be defined'};
-const ISSUE_WARN=new Set(['dupcode','dupserial','nextdiff','nextbefore','lastfuture','noperiod','nodates','plannedpast','import']);
+const ISSUE_WARN=new Set(['certnoreg','dupcode','dupserial','nextdiff','nextbefore','lastfuture','noperiod','nodates','plannedpast','import']);
 const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS_EN=['january','february','march','april','may','june','july','august','september','october','november','december'];
 const COLS=['equipment','calibrations','evaluations','maintenance','config'];
@@ -496,8 +498,40 @@ function issuesOf(e){
   if(active&&info.planned&&mIdx(info.planned.month)<nowIdx()) add('plannedpast',`Calibration planned for ${fmtM(info.planned.month)} is not registered as done.`);
   const tol=tolNum(e);
   for(const v of IX.evals.get(e.id)||[]){const tu=num(v.tu); if(tol!=null&&tu!=null&&Math.abs(tol-tu)>1e-9&&(v.unit||'ºC')!=='%RH'){add('tudiff',`TU ${fmtNum(tu)} ${v.unit||''} in the evaluation${v.date?' of '+fmtD(v.date):''}; the plan tolerance is ±${fmtNum(tol)}.`); break;}}
+  for(const ct of IX.certFree.get(e.id)||[]) add('certnoreg',`Certificate ${ct.certRef||ct.file} (calibrated ${fmtD(ct.calDate)}) is in SharePoint, but no calibration is registered for that month.`);
   (e.importNotes||[]).forEach((n,i)=>{ if(!n.done) out.push({type:'import',sev:'warn',text:n.text,note:i}); });
   return out;
+}
+/* Certificates copied from SharePoint (lab-data/calibraciones/certificados.json, written by the scheduled sync; read only here).
+   Each one is matched to the done calibration of its equipment with the same certificate number or, failing that, the closest month
+   (up to 3 months away). A matched calibration without results typed in takes the certificate's points, so the validation sheet uses them. */
+const SP_Q=new Set(['T','RH']);
+function linkCerts(){
+  IX.certs=new Map(); IX.certFree=new Map(); IX.certByRec=new Map();
+  const list=Object.entries(CERTS||{}).map(([k,c])=>({key:k,...c})).filter(c=>c.equipmentId&&IX.byId.has(c.equipmentId)).sort((a,b)=>String(a.calDate||'').localeCompare(String(b.calDate||'')));
+  for(const ct of list){
+    (IX.certs.get(ct.equipmentId)||IX.certs.set(ct.equipmentId,[]).get(ct.equipmentId)).push(ct);
+    const done=(IX.recs.get(ct.equipmentId)||[]).filter(c=>c.status==='Done'&&!IX.certByRec.has(c.id)), cm=mIdx(String(ct.calDate||'').slice(0,7));
+    let rec=ct.certRef?done.find(c=>c.certRef&&c.certRef.trim()===ct.certRef):null;
+    if(!rec&&cm!=null){let best=null; for(const c of done){const d=Math.abs(mIdx(c.month)-cm); if(d<=3&&(!best||d<best.d)) best={c,d};} rec=best&&best.c;}
+    if(!rec){(IX.certFree.get(ct.equipmentId)||IX.certFree.set(ct.equipmentId,[]).get(ct.equipmentId)).push(ct); continue;}
+    IX.certByRec.set(rec.id,ct); ct.recId=rec.id;
+    const pts=(ct.points||[]).filter(p=>SP_Q.has(p.q));
+    if(!(rec.results||[]).length&&pts.length){rec.results=pts.map(p=>({q:p.q,nominal:p.nominal,atT:p.atT??null,mean:p.mean,U:p.U,stab:p.stab??null,unif:p.unif??null,zones:p.zones||[]})); rec.resultsFrom='sharepoint'; if(!rec.zonesN) rec.zonesN=ct.zonesN||'';}
+    if(!rec.certRef) rec.certRef=ct.certRef||'';
+  }
+}
+const certA=ct=>ct?`<a class="folder" href="${esc(ct.url||'#')}" target="_blank" rel="noopener" title="Open the certificate in SharePoint">📄 ${esc(ct.certRef||ct.file||'Certificate')}</a>`:'';
+function certPoints(ct){
+  const pts=ct.points||[]; if(!pts.length) return `<p class="note">${esc(ct.notes||'No results were read from this certificate.')}</p>`;
+  const iso=pts.some(p=>SP_Q.has(p.q)&&(p.stab!=null||p.unif!=null));
+  return iso
+    ? `<table class="tbl mini"><thead><tr><th>Point</th><th class="num">Mean</th><th class="num">U (k=2)</th><th class="num">Stab.</th><th class="num">Unif.</th><th>Positions</th></tr></thead><tbody>${pts.map(p=>`<tr><td class="nowrap">${p.q==='RH'?`${fmtNum(p.nominal)} %RH at ${fmtNum(p.atT)} ºC`:`${fmtNum(p.nominal)} ${esc(p.unit||'ºC')}`}</td><td class="num">${fmtNum(p.mean)}</td><td class="num">${fmtNum(p.U)}</td><td class="num">${fmtNum(p.stab)}</td><td class="num">${fmtNum(p.unif)}</td><td class="mono">${esc((p.zones||[]).map(fmtNum).join(' · '))}</td></tr>`).join('')}</tbody></table>`
+    : `<table class="tbl mini"><thead><tr><th>Quantity</th><th class="num">Nominal</th><th class="num">Indicated</th><th class="num">Error</th><th class="num">U</th><th class="num">k</th></tr></thead><tbody>${pts.map(p=>`<tr><td>${esc(p.q||'')}</td><td class="num">${fmtNum(p.nominal)} ${esc(p.unit||'')}</td><td class="num">${fmtNum(p.mean)}</td><td class="num">${fmtNum(p.error)}</td><td class="num">${fmtNum(p.U)}</td><td class="num">${fmtNum(p.k)}</td></tr>`).join('')}</tbody></table>`;
+}
+function certPanel(ct,id){
+  const reg=!ct.recId;
+  return `<div class="cert"><div class="row">${certA(ct)}<span class="muted">${esc([ct.lab,ct.calDate?'calibrated '+fmtD(ct.calDate):'',ct.issueDate?'issued '+fmtD(ct.issueDate):''].filter(Boolean).join(' · '))}</span>${ct.verdict?`<span class="chip">${esc(ct.verdict)}</span>`:''}<span class="sp"></span>${reg&&id?`<button type="button" class="btn sm" data-act="cert-reg" data-id="${esc(id)}" data-k="${esc(ct.key)}">Register this calibration</button>`:''}</div>${certPoints(ct)}</div>`;
 }
 function buildIndex(){
   const eqs=Object.entries(DATA.equipment).map(([id,v])=>({id,...v})).sort(byCode);
@@ -509,6 +543,7 @@ function buildIndex(){
   for(const [id,v] of Object.entries(DATA.maintenance)) push(logs,v.equipmentId,{id,...v});
   for(const e of eqs){ const k=norm(e.code); if(k) push(code,k,e); const s=normSerial(e.serial); if(s) push(serial,s,e); }
   IX={eqs,byId:new Map(eqs.map(e=>[e.id,e])),recs,evals,logs,code,serial,info:new Map(),maint:new Map(),issues:new Map()};
+  linkCerts();
   for(const e of eqs){IX.info.set(e.id,calInfo(e)); IX.maint.set(e.id,maintInfo(e));}
   for(const e of eqs) IX.issues.set(e.id,issuesOf(e));
   IX.labs=[...new Set(eqs.map(e=>e.lab).filter(Boolean))].sort();
@@ -708,7 +743,7 @@ function vCalibrations(){
       <td>${done?box(c,'label'):''}</td>
       <td>${done?(isClosed(c)?'<span class="tick">Closed</span>':'<span class="muted">Open</span>'):''}</td>
       <td class="num">${c.cost!==''&&c.cost!=null?money(c.cost):'—'}</td>
-      <td><span class="sub">${esc(c.source||'')}</span></td></tr>`}).join('');
+      <td>${certA(IX.certByRec.get(c.id))}<span class="sub">${esc(c.source||'')}</span></td></tr>`}).join('');
   return `<div class="view-h"><h2>Calibrations</h2><button class="btn primary" data-act="cal-new">+ Register calibration</button></div>
   <div class="filters multi"><div class="row">${searchBox('Search code, equipment, lab, certificate…')}${S.q||f.status.length||f.year.length?'<button class="link" data-act="clear-calf">Clear filters</button>':''}</div>
     ${chips('calf','status','Status',[['Planned','Planned'],['late','Planned, month passed'],['open','Done, not closed'],['closed','Done & closed']].map(([v,l])=>[v,l,all.filter(c=>calIs(c,v,n)).length]))}
@@ -1223,8 +1258,10 @@ function openEq(id){
   </fieldset>
   ${isNew?'':`<div class="recs">
     ${iss.length?`<section class="panel"><div class="panel-h"><h3>Data to review · ${iss.length}</h3></div><ul class="rev-list">${iss.map(it=>`<li><span class="iss ${it.sev==='warn'?'':'info'}">${it.sev==='warn'?'Warning':'To define'}</span><span>${esc(it.text)}</span>${it.type==='import'?`<button type="button" class="btn sm" data-act="note-done" data-id="${esc(id)}" data-n="${it.note}">Mark reviewed</button>`:'<span></span>'}</li>`).join('')}</ul></section>`:''}
+    <section class="panel"><div class="panel-h"><h3>Current certificates in SharePoint</h3><span class="muted">${(IX.certs.get(id)||[]).length?'copied from the Actuales folder':''}</span></div>
+      ${(IX.certs.get(id)||[]).length?(IX.certs.get(id)||[]).slice().reverse().map(ct=>certPanel(ct,id)).join(''):`<p class="note">No certificate copied from SharePoint yet. The certificates in the <a href="${esc(certLink(e))}" target="_blank" rel="noopener">Actuales folder</a> are copied on days 1 and 15 of each month.</p>`}</section>
     <section class="panel"><div class="panel-h"><h3>Calibrations</h3><button type="button" class="btn sm" data-act="cal-plan" data-id="${esc(id)}">Plan calibration</button><button type="button" class="btn sm primary" data-act="cal-new" data-id="${esc(id)}">Register calibration</button></div>
-      ${recs.length?`<table class="tbl mini"><thead><tr><th>Month</th><th>Status</th><th>Lab</th><th>Closure</th><th class="num">Cost</th><th>Source</th></tr></thead><tbody>${recs.map(c=>`<tr class="click" data-act="cal-edit" data-id="${esc(c.id)}"><td>${fmtM(c.month)}</td><td>${esc(c.status)}</td><td>${esc(c.lab||'—')}</td><td>${c.status==='Done'?(isClosed(c)?'<span class="tick">Closed</span>':esc(missingClosure(c).join(', '))):''}</td><td class="num">${c.cost!==''&&c.cost!=null?money(c.cost):'—'}</td><td><span class="sub">${esc(c.source||'')}</span></td></tr>`).join('')}</tbody></table>`:'<p class="note">No calibrations recorded.</p>'}</section>
+      ${recs.length?`<table class="tbl mini"><thead><tr><th>Month</th><th>Status</th><th>Lab</th><th>Closure</th><th class="num">Cost</th><th>Source</th></tr></thead><tbody>${recs.map(c=>`<tr class="click" data-act="cal-edit" data-id="${esc(c.id)}"><td>${fmtM(c.month)}</td><td>${esc(c.status)}</td><td>${esc(c.lab||'—')}</td><td>${c.status==='Done'?(isClosed(c)?'<span class="tick">Closed</span>':esc(missingClosure(c).join(', '))):''}</td><td class="num">${c.cost!==''&&c.cost!=null?money(c.cost):'—'}</td><td>${certA(IX.certByRec.get(c.id))}<span class="sub">${esc(c.source||'')}</span></td></tr>`).join('')}</tbody></table>`:'<p class="note">No calibrations recorded.</p>'}</section>
     <section class="panel"><div class="panel-h"><h3>TU evaluations</h3><button type="button" class="btn sm" data-act="ev-new" data-id="${esc(id)}">+ Evaluation</button></div>
       ${evs.length?`<table class="tbl mini"><thead><tr><th>Date</th><th class="num">Setpoint</th><th class="num">|e|+U</th><th class="num">TU</th><th>Result</th></tr></thead><tbody>${evs.map(v=>{const c=evalCalc(v); return `<tr class="click" data-act="ev-edit" data-id="${esc(v.id)}"><td>${fmtD(v.date)}</td><td class="num">${fmtNum(num(v.setpoint))} ${esc(v.unit||'')}</td><td class="num">${c.eu==null?'—':fmtNum(Math.round(c.eu*1000)/1000)}</td><td class="num">${fmtNum(c.tu)}</td><td>${c.res?`<span class="res ${c.res}">${c.res}</span>`:'—'}</td></tr>`}).join('')}</tbody></table>`:'<p class="note">No TU evaluations.</p>'}</section>
     <section class="panel"><div class="panel-h"><h3>Maintenance log</h3><button type="button" class="btn sm" data-act="mt-new" data-id="${esc(id)}">+ Log maintenance</button></div>
@@ -1269,6 +1306,7 @@ function openCal(id,preset={}){
   const prev=id?DATA.calibrations[id]:null, c={status:'Done',month:mStr(nowIdx()),certificate:false,inTolerance:'',label:false,...(prev||{}),...preset};
   if(!c.equipmentId&&!eqOptions().length) return toast('Add equipment first.');
   const e=eqById(c.equipmentId); if(!prev&&e){c.lab??=e.lab; if(c.cost==null&&e.price!=='') c.cost=e.price;}
+  const spCert=id?IX.certByRec.get(id):(preset.spKey&&CERTS[preset.spKey]?{key:preset.spKey,...CERTS[preset.spKey]}:null); delete c.spKey;
   dlg.dataset.kind='cal'; dlg.dataset.id=id||'';
   const body=`<fieldset><legend>Calibration</legend>
     ${fld('f-equipmentId','Equipment',sel('equipmentId',c.equipmentId||'',[['','— choose —'],...eqOptions()]),'req span2')}
@@ -1285,12 +1323,14 @@ function openCal(id,preset={}){
     <div class="span2" id="cal-hint"></div>
   </fieldset>
   <fieldset id="results" class="pts"><legend>Certificate results (validation sheet)</legend>
-    <div class="row" style="margin-bottom:8px"><button type="button" class="btn sm primary" data-act="cert-pdf">Read certificate PDF…</button><input type="file" id="file-cert" accept="application/pdf,.pdf" hidden><span class="note">Open the 📁 certificates folder, download the PDF and choose it here: the points are filled in for you to check.</span></div>
+    ${spCert?`<p class="note" style="margin-bottom:8px">Read from the certificate in SharePoint. The validation sheet uses these values${(c.results||[]).length?', unless results are typed in below':''}.</p>${certPanel(spCert)}`:`<p class="note" style="margin-bottom:8px">No certificate from SharePoint matches this calibration yet: it is linked automatically once the certificate is copied (days 1 and 15 of each month).</p>`}
+    <details class="manual" ${spCert&&!(c.results||[]).length?'':'open'}><summary>Enter results by hand${spCert?' (overrides the certificate)':''}</summary>
     <p class="note" style="margin-bottom:8px">One row per calibration point as in the certificate: nominal, mean of all positions, expanded uncertainty U (k=2), stability, uniformity and the mean of each position separated by “;”. For humidity, also the temperature of the point.</p>
     <div class="field" style="max-width:220px;margin-bottom:8px"><label for="f-zonesN">Positions measured</label><input id="f-zonesN" name="zonesN" type="number" min="1" step="1" value="${esc(c.zonesN??'')}"></div>
     <div class="res-head"><span>Quantity</span><span>Nominal</span><span>At ºC</span><span>Mean</span><span>U (k=2)</span><span>Stab.</span><span>Unif.</span><span>Positions</span><span></span></div>
     <div id="res-list">${(c.results||[]).map(resRow).join('')}</div>
     <button type="button" class="btn sm" data-act="res-add">+ Add point</button>
+    </details>
   </fieldset>
   ${fld('f-notes','Notes',`<textarea id="f-notes" name="notes" rows="2">${esc(c.notes||'')}</textarea>`)}
   ${prev&&prev.source?`<p class="note">Source: ${esc(prev.source)}</p>`:''}`;
@@ -1303,76 +1343,6 @@ function readResults(){
   return [...dlg.querySelectorAll('.res-row')].map(row=>{const g=k=>row.querySelector(`[name=r-${k}]`).value, q=g('q');
     return {q,nominal:num(g('nominal')),atT:q==='RH'?num(g('atT')):null,mean:num(g('mean')),U:num(g('U')),stab:num(g('stab')),unif:num(g('unif')),zones:g('zones').split(';').map(num).filter(v=>v!=null)};
   }).filter(r=>r.nominal!=null&&r.mean!=null);
-}
-/* ---------- Reading a calibration certificate (PDF) ----------
-   The PDF is read in the browser with pdf.js; nothing is uploaded. Text is rebuilt line by line from the item positions and the
-   result tables are recognised by their shape, so it works with the TRADELAB layout (one page per calibration point):
-   summary row  = nominal · stability · U · uniformity · U · mean · U (k=2)
-   position row = position · max · min · standard deviation · mean [· U] [· %RH]
-   The same parser will read the certificate straight from SharePoint once the app can sign in to Microsoft 365. */
-const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
-let pdfjsReady=null;
-function loadPdfjs(){
-  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
-  return pdfjsReady||(pdfjsReady=new Promise((res,rej)=>{const s=document.createElement('script'); s.src=PDFJS+'pdf.min.js';
-    s.onload=()=>{window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js'; res(window.pdfjsLib);}; s.onerror=()=>{pdfjsReady=null; rej(new Error('the PDF reader could not load (no internet connection?)'));}; document.head.appendChild(s);}));
-}
-async function pdfLines(buf){
-  const lib=await loadPdfjs(), pdf=await lib.getDocument({data:buf}).promise, pages=[];
-  for(let i=1;i<=pdf.numPages;i++){
-    const items=(await (await pdf.getPage(i)).getTextContent()).items.filter(t=>t.str&&t.str.trim()).map(t=>({s:t.str.trim(),x:t.transform[4],y:t.transform[5],h:Math.abs(t.transform[3])||8}));
-    items.sort((a,b)=>b.y-a.y||a.x-b.x);
-    const lines=[]; for(const it of items){const l=lines[lines.length-1]; if(l&&Math.abs(l.y-it.y)<=Math.max(2,it.h*0.35)) l.items.push(it); else lines.push({y:it.y,items:[it]});}
-    pages.push(lines.map(l=>l.items.sort((a,b)=>a.x-b.x).map(t=>t.s).join(' ')));
-  }
-  return pages;
-}
-const certNums=s=>(String(s).match(/-?\d+(?:[.,]\d+)?/g)||[]).map(v=>parseFloat(v.replace(',','.')));
-function parseCertificate(pages){
-  const all=pages.flat().join('\n'), out={certRef:(all.match(/C-\d{5}\.\d{5}/)||[''])[0],date:'',results:[],zonesN:'',warnings:[]};
-  const d=all.match(/(\d{2})\/(\d{2})\/(20\d{2})/); if(d) out.date=`${d[3]}-${d[2]}-${d[1]}`;
-  const near=(a,b,w)=>Math.abs(a-b)<=w;
-  for(const lines of pages){
-    const txt=lines.join('\n');
-    /* Summary rows: 7 numbers in a row, the 6th (mean) close to the 1st (nominal). */
-    const sums=[];
-    for(const l of lines){const n=certNums(l); for(let i=0;i+7<=n.length;i++){const w=n.slice(i,i+7);
-      if(Number.isInteger(w[0])&&[w[1],w[2],w[3],w[4],w[6]].every(v=>v>=0&&v<15)&&near(w[5],w[0],Math.max(5,Math.abs(w[0])*0.1))){sums.push(w); break;}}}
-    if(!sums.length) continue;
-    const isRH=/HUMEDAD/i.test(txt), rhNom=(txt.match(/NOMINAL(?:ES)?\s*:\s*(-?\d+(?:[.,]\d+)?)\s*%\s*hr/i)||[])[1];
-    let T=sums[0], H=null;
-    if(isRH&&sums.length>1){const rn=rhNom!=null?parseFloat(rhNom.replace(',','.')):null;
-      const byNom=rn!=null?sums.filter(w=>w[0]===rn):[];
-      H=byNom.length===1?byNom[0]:[...sums].sort((a,b)=>b[6]-a[6])[0]; T=sums.find(w=>w!==H)||null;}
-    /* Position rows: an integer position followed by max, min, deviation and mean; only rows whose mean sits within the uniformity band. */
-    const pos=[];
-    for(const l of lines){const n=certNums(l); if(n.length<5||!Number.isInteger(n[0])||n[0]<0||n[0]>30) continue; pos.push(n);}
-    const zonesOf=(row,pick)=>{const seen=new Map(); for(const n of pos){const v=pick(n); if(v!=null&&!seen.has(n[0])&&near(v,row[5],2*row[3]+0.05)) seen.set(n[0],v);} return [...seen].sort((a,b)=>a[0]-b[0]).map(x=>x[1]);};
-    const rec=(q,w,atT,zones)=>({q,nominal:w[0],atT,mean:w[5],U:w[6],stab:w[1],unif:w[3],zones});
-    if(T){const z=zonesOf(T,n=>n[4]); out.results.push(rec('T',T,null,z)); if(z.length) out.zonesN=Math.max(+out.zonesN||0,z.length);}
-    if(H){const z=zonesOf(H,n=>n.length>=7?n[n.length-1]:null); out.results.push(rec('RH',H,T?T[0]:null,z.length===(+out.zonesN||z.length)?z:[]));}
-  }
-  /* One row per point: the same nominal read twice (summary repeated on the page) is kept once. */
-  const key=r=>`${r.q}${r.nominal}@${r.atT}`, seen=new Set(); out.results=out.results.filter(r=>!seen.has(key(r))&&seen.add(key(r)));
-  out.results.sort((a,b)=>(a.q===b.q?0:a.q==='T'?-1:1)||(a.q==='RH'?a.atT-b.atT:0)||a.nominal-b.nominal);
-  if(!out.results.length) out.warnings.push('No result tables were recognised in this PDF.');
-  else if(out.results.some(r=>!r.zones.length)) out.warnings.push('Some points have no per-position values: check them against the certificate.');
-  return out;
-}
-async function onCertPdf(f){
-  if(!f) return;
-  const btn=dlg.querySelector('[data-act="cert-pdf"]'); if(btn){btn.disabled=true; btn.textContent='Reading…';}
-  try{
-    const c=parseCertificate(await pdfLines(await f.arrayBuffer()));
-    if(!c.results.length) throw new Error(c.warnings[0]);
-    $('#res-list').innerHTML=c.results.map(resRow).join('');
-    if(c.zonesN) $('#f-zonesN').value=c.zonesN;
-    const ref=dlg.querySelector('[name=certRef]'); if(ref&&!ref.value&&c.certRef) ref.value=c.certRef;
-    const cb=dlg.querySelector('[name=certificate]'); if(cb) cb.checked=true;
-    calHints();
-    toast(`${f.name}: ${plural(c.results.length,'point')} read${c.certRef?` from ${c.certRef}`:''}. Check them and press Save.${c.warnings.length?' '+c.warnings.join(' '):''}`);
-  }catch(e){toast('Could not read the certificate: '+(e.message||e));}
-  finally{if(btn){btn.disabled=false; btn.textContent='Read certificate PDF…';}}
 }
 function calHints(){
   if(dlg.dataset.kind!=='cal') return;
@@ -1537,6 +1507,19 @@ function applyOps(data,ops){
     else if(o.op==='delete') delete c[o.id];}
   return data;
 }
+/* Certificates from SharePoint: a separate file in the same repository, read only. */
+let CERTS={}; const certsRemote={etag:null};
+async function loadCerts(){
+  if(LOCAL){CERTS=window.CAL_LOCAL_CERTS||{}; return;}
+  if(!GH.token||GH.invalid) return;
+  try{
+    const res=await ghFetch(`${API}/contents/calibraciones/certificados.json?ref=${REPO.branch}`,certsRemote.etag?{headers:{'If-None-Match':certsRemote.etag}}:{});
+    if(res.status===304||!res.ok) return;
+    const j=await res.json(); let text=j.content?b64decode(j.content):null;
+    if(text==null){const blob=await ghFetch(`${API}/git/blobs/${j.sha}`); if(!blob.ok) return; text=b64decode((await blob.json()).content);}
+    CERTS=(JSON.parse(text)||{}).certificates||{}; certsRemote.etag=res.headers.get('etag');
+  }catch(e){}
+}
 function recompute(){ DATA=remote.data?applyOps(clone(remote.data),pendingOps.flat()):null; }
 function commitMessage(ops){
   const base=remote.data||emptyData(), cur=(o)=>({...(base[o.col]||{})[o.id],...(o.data||{})});
@@ -1585,11 +1568,13 @@ async function flushOps(){
 async function refresh(){
   if(LOCAL){
     if(!remote.data){let s=null; try{s=JSON.parse(localStorage.getItem(LS_LOCAL)||'null');}catch(e){} remote.data=normData(s||clone(window.CAL_LOCAL));}
-    recompute(); render(); return;
+    await loadCerts(); recompute(); render(); return;
   }
   if(pendingOps.length||flushing||(PREVIEW&&remote.data)) return;
   try{
     const r=GH.token&&!GH.invalid?await fetchApi(true):await fetchRaw();
+    const n0=Object.keys(CERTS).length, e0=certsRemote.etag; await loadCerts();
+    if(!r&&(certsRemote.etag!==e0||Object.keys(CERTS).length!==n0)) render();
     if(r){Object.assign(remote,r); if(PREVIEW) S.ro=false; recompute(); render();}
     S.noDb=false; S.privateData=false;
   }catch(err){
@@ -1685,7 +1670,7 @@ document.addEventListener('click',async ev=>{
   else if(a==='local-reset'){try{localStorage.removeItem(LS_LOCAL);}catch(e){} remote.data=null; await refresh(); toast('Test data reset.');}
   else if(a==='sheet'){S.sheet=id; dlg.close(); setView('sheets');}
   else if(a==='print'){const e=eqById(S.sheet), t=document.title; if(e) document.title=`${e.code}-VAL ${todayIso()}`; window.print(); document.title=t;}
-  else if(a==='cert-pdf'){const i=$('#file-cert'); i.value=''; i.click();}
+  else if(a==='cert-reg'){const ct=CERTS[t.dataset.k]; if(ct) openCal(null,{equipmentId:id,status:'Done',month:String(ct.calDate||'').slice(0,7)||mStr(nowIdx()),lab:ct.lab||'',certRef:ct.certRef||'',certificate:true,spKey:t.dataset.k});}
   else if(a==='res-add'){$('#res-list').insertAdjacentHTML('beforeend',resRow({q:'T'})); $('#res-list').lastElementChild.querySelector('input').focus();}
   else if(a==='res-del') t.closest('.res-row').remove();
   else if(a==='gh-off') disconnectGh();
@@ -1697,7 +1682,6 @@ document.addEventListener('input',ev=>{
 document.addEventListener('change',ev=>{
   const el=ev.target;
   if(el.id==='file-xlsx') onXlsx(el.files[0]);
-  else if(el.id==='file-cert') onCertPdf(el.files[0]);
   else if(el.id==='plan-all'){S.plan.all=el.checked; render();}
   else if(el.id==='sheet-pick'){S.sheet=el.value; render();}
   else if(el.dataset.tog){const c=DATA.calibrations[el.dataset.id]; save([{op:'update',col:'calibrations',id:el.dataset.id,data:{[el.dataset.tog]:el.checked,updated:nowIso()}}],`${eqById(c.equipmentId)?.code||''} ${fmtM(c.month)}: ${el.dataset.tog==='label'?'label':'certificate'} ${el.checked?'ticked':'unticked'}.`);}
