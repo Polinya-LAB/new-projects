@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Test Lab Control (preview) · Laboratorio Polinyà</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=20261021">
+</head>
+<!-- Control de ensayos and Ocupación share app.js and app.css; <body data-app> picks the app. -->
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><a class="home" href="../">← Laboratorio Polinyà</a><div class="row1"><h1>Test Lab Control</h1><span class="tag">R&amp;D LAB</span><span class="tag proto">PREVIEW</span></div></div>
+    <button type="button" class="gh" id="btn-gh" data-act="gh"><i></i><span>Connect GitHub</span></button>
+    <button class="btn primary" id="btn-new" data-act="new">+ New test</button>
+    <nav class="tabs" id="tabs" aria-label="Views"></nav>
+  </div>
+</header>
+<main id="view"><div class="empty"><h3>Loading lab data…</h3></div></main>
+<dialog id="dlg"></dialog>
+<datalist id="qtp-list"></datalist>
+<datalist id="smp-plr-list"></datalist>
+<datalist id="smp-loc-list"></datalist>
+<div id="toast" hidden></div>
+<div id="smp-print"></div>
+<style id="smp-page-size">@page{size:89mm 36mm;margin:0}</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/barcodes/JsBarcode.code128.min.js"></script>
+<!-- Preview only: example data. Not in the copy that goes to management-tools. -->
+<script src="demo-data.js?v=20261021"></script>
+<script src="app.js?v=20261021"></script>
+</body>
+</html>
