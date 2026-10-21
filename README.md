@@ -7,4 +7,4 @@ Publicado con GitHub Pages en https://polinya-lab.github.io/new-projects/
 | Carpeta | App |
 | --- | --- |
 | [calibraciones/](calibraciones/) | Plan de calibraciones (F-IM-FM-001) |
-| [control-ensayos/](control-ensayos/) | Control de ensayos con la pestaña Muestras (vista previa, no guarda en GitHub) |
+| [muestras/](muestras/) | Muestras: recepción, enlace con los PLR de ARAS y etiquetas DYMO (beta, instalable; no guarda en GitHub) |

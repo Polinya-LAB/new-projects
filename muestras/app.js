@@ -17,13 +17,14 @@ const UNITS=['Hours','Days','Weeks','Cycles'];
 const UNIT_SHORT={Hours:'h',Days:'d',Weeks:'wk',Cycles:'cycles'};
 const RESULTS=['Pass','Fail','N/A'];
 const ARAS_STATUS={'in queue':'Queued','queued':'Queued','in progress':'In progress','completed':'Completed','complete':'Completed','cancelled':'Cancelled','canceled':'Cancelled','endurance running':'Endurance running','endurance':'Endurance running','not approved':'Not approved','not aproved':'Not approved','rejected':'Not approved'};
-/* The same code runs two apps on the same data: Control de ensayos (tests) and Ocupación (equipment and technician load),
-   chosen by <body data-app>. Each app shows only its own views and alerts. */
-const APP=document.body.dataset.app==='occupancy'?'occupancy':'tests';
+/* The same code runs three apps on the same data, chosen by <body data-app>: Control de ensayos (tests), Ocupación
+   (equipment and technician load) and Muestras (samples: reception, PLR links and labels). Each app shows only its own views. */
+const APP=['occupancy','samples'].includes(document.body.dataset.app)?document.body.dataset.app:'tests';
 const VIEWS=APP==='occupancy'
   ?[['overview','Overview'],['planning','Planning'],['occupancy','Occupancy'],['resources','Equipment & team']]
-  :[['overview','Overview'],['board','Board'],['queue','Queue'],['planning','Planning'],['samples','Samples'],['history','History'],['resources','Equipment & team'],['library','QTP library'],['import','Import ARAS']];
-const VIEW_KEY=APP==='occupancy'?'occ.view':'tl.view';
+  :APP==='samples'?[['samples','Samples'],['import','Import ARAS']]
+  :[['overview','Overview'],['board','Board'],['queue','Queue'],['planning','Planning'],['history','History'],['resources','Equipment & team'],['library','QTP library'],['import','Import ARAS']];
+const VIEW_KEY=APP==='occupancy'?'occ.view':APP==='samples'?'smp.view':'tl.view';
 const DAY=86400000, WEEKS_HEAT=8;
 /* Firestore-style collections. People and equipment keep the collections created in the first version. */
 const COL={tests:'tests',people:'personas',equipment:'bancos',qtps:'qtps',samples:'muestras'};
@@ -63,7 +64,7 @@ const QTP_FIELDS=[
 ];
 
 /* ---------- State ---------- */
-const S={tests:[],people:[],equipment:[],qtps:[],cfg:{},loaded:new Set(),view:'overview',q:'',imp:null,qimp:null,ro:false,noDb:false,dayW:18,hist:{st:'',res:''},incClosed:true,sort:{queue:{k:'',dir:1},hist:{k:'',dir:1}},qst:['Not approved','Queued','Planned','In progress','Endurance running','On hold'],occ:{start:null,weeks:4,sel:null}};
+const S={tests:[],people:[],equipment:[],qtps:[],cfg:{},loaded:new Set(),view:APP==='samples'?'samples':'overview',q:'',imp:null,qimp:null,ro:false,noDb:false,dayW:18,hist:{st:'',res:''},incClosed:true,sort:{queue:{k:'',dir:1},hist:{k:'',dir:1}},qst:['Not approved','Queued','Planned','In progress','Endurance running','On hold'],occ:{start:null,weeks:4,sel:null}};
 let db=null, dl=null, IX=null;
 try{const v=localStorage.getItem(VIEW_KEY); if(VIEWS.some(x=>x[0]===v)) S.view=v; S.hideIdle=localStorage.getItem('tl.hideIdle')==='1'; const z=+localStorage.getItem('tl.dayW'); if(z) S.dayW=z===30?32:z; const qs=JSON.parse(localStorage.getItem('tl.qst')||'null'); if(Array.isArray(qs)&&qs.length) S.qst=qs.filter(x=>ACTIVE.includes(x)); if(!localStorage.getItem('tl.qstv')){ if(!S.qst.includes('Not approved')) S.qst.unshift('Not approved'); localStorage.setItem('tl.qstv','2'); } if(localStorage.getItem('tl.qstv')==='2'){ if(!S.qst.includes('Endurance running')) S.qst.push('Endurance running'); localStorage.setItem('tl.qstv','3'); } localStorage.setItem('tl.qst',JSON.stringify(S.qst)); const ow=+localStorage.getItem('tl.occw'); if([2,4,6,8].includes(ow)) S.occ.weeks=ow;}catch(e){}
 if(location.hash&&VIEWS.some(x=>'#'+x[0]===location.hash)) S.view=location.hash.slice(1);
@@ -309,9 +310,9 @@ function computeAlerts(ix){
 function render(){
   IX=buildIndex(S.tests); const A=computeAlerts(IX); S.A=A;
   $('#qtp-list').innerHTML=[...S.qtps].sort(byName).map(q=>`<option value="${esc(q.code||q.id)}">${esc(q.name||'')}</option>`).join('');
-  const crit=A.global.filter(a=>a.sev==='crit').length, nq=S.tests.filter(t=>t.status==='Queued').length, nh=S.tests.filter(t=>CLOSED.includes(t.status)).length, ns=APP==='tests'?smpMissingCount():0;
+  const crit=A.global.filter(a=>a.sev==='crit').length, nq=S.tests.filter(t=>t.status==='Queued').length, nh=S.tests.filter(t=>CLOSED.includes(t.status)).length, ns=APP!=='occupancy'?smpMissingCount():0;
   $('#tabs').innerHTML=VIEWS.map(([k,l])=>`<button data-view="${k}" ${S.view===k?'aria-current="page"':''}>${k==='samples'?tx('tab'):l}${k==='samples'&&ns?`<span class="n warn" title="${esc(tx('k_miss'))}">${ns}</span>`:''}${k==='overview'&&A.global.length?`<span class="n ${crit?'crit':''}">${A.global.length}</span>`:''}${k==='queue'&&nq?`<span class="n">${nq}</span>`:''}${k==='history'&&nh?`<span class="n">${nh}</span>`:''}</button>`).join('');
-  $('#btn-new').hidden=S.ro||S.noDb||APP==='occupancy';
+  $('#btn-new').hidden=S.ro||S.noDb||APP!=='tests';
   let banner='';
   if(S.noDb) banner=S.privateData
     ? (GH.login
@@ -939,7 +940,7 @@ function openEditor(id){
   </fieldset>
   <div id="f-warn"></div>
   ${sibs.length?`<div><p class="eyebrow" style="margin-bottom:6px">Other tasks in ${esc(t.plr)}</p><div class="siblings">${sibs.map(x=>`<button type="button" data-act="open-sib" data-id="${esc(x.id)}"><span class="ref">${esc(ref(x))}</span><span>${esc(x.title||'')}</span>${x.sequence?`<span class="chip">seq ${esc(x.sequence)}</span>`:''}<span class="sp"></span>${estPill(x.status)}${resTag(x.result)}</button>`).join('')}</div></div>`:''}
-  ${isNew||APP!=='tests'?'':smpEditorBlock(t)}`;
+  ${isNew||APP==='occupancy'?'':smpEditorBlock(t)}`;
   dlg.innerHTML=dlgShell(isNew?'New manual test':(fromAras?'ARAS task':'Manual test'),isNew?'New test':`${baseRef(t)} · ${t.title||''}`,body,isNew?'':`<button type="button" class="btn ghost danger" data-act="del">Delete</button>`);
   if(!dlg.open) dlg.showModal(); liveHints();
 }
@@ -1630,7 +1631,7 @@ function smpPrint(){
 function smpOpenCode(code){
   code=code.toUpperCase(); const base=code.match(/FLS-\d{5}/)[0], n=+(code.split('-')[2]||0);
   const l=S.samples.find(x=>x.code===base); if(!l) return toast(tx('notFound',code));
-  if(S.view!=='samples'&&APP==='tests'){S.view='samples'; render();}
+  if(S.view!=='samples'&&APP!=='occupancy'){S.view='samples'; render();}
   smpOpenLot(l.id,n||null);
 }
 function smpFromHash(){const m=decodeURIComponent(location.hash).match(SMP_CODE_RE); if(m&&S.samples.length) smpOpenCode(m[0]);}
@@ -1774,7 +1775,7 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1); if(VIE
 /* ---------- Storage: one JSON file in the private data repository Polinya-LAB/lab-data (folder ensayos/) ----------
    Reading ensayos.json needs the key (token) of an account with read access; saving needs write access;
    every save is a commit. The key is shared with the durability pool app (same site, same browser storage). */
-const APP_NAME=APP==='occupancy'?'Ocupación':'Control de ensayos';
+const APP_NAME=APP==='occupancy'?'Ocupación':APP==='samples'?'Muestras':'Control de ensayos';
 const REPO={owner:'Polinya-LAB',repo:'lab-data',branch:'main',path:'ensayos/ensayos.json'};
 const CAL_PATH='calibraciones/calibraciones.json';
 const API=`https://api.github.com/repos/${REPO.owner}/${REPO.repo}`;
@@ -1786,7 +1787,7 @@ const remote={data:null,sha:null,etag:null};
 /* Preview copy in new-projects: reads the real data from lab-data with the GitHub key but never writes to it; changes stay
    in this page until it is reloaded. Without a key it can run on the example data of demo-data.js, kept in this browser.
    Remove these lines (PREVIEW, DEMO and what uses them) in the copy that goes to management-tools. */
-const PREVIEW=true, DEMO_KEY='ce.preview.demo', DEMO_DATA_KEY='ce.preview.demo.data';
+const PREVIEW=true, DEMO_KEY=APP==='samples'?'smp.preview.demo':'ce.preview.demo', DEMO_DATA_KEY=DEMO_KEY+'.data';
 let DEMO=false; try{DEMO=!!window.CE_DEMO&&localStorage.getItem(DEMO_KEY)==='1';}catch(e){}
 function demoLoad(){let s=null; try{s=JSON.parse(localStorage.getItem(DEMO_DATA_KEY)||'null');}catch(e){} return normData(s||window.CE_DEMO());}
 function demoSave(){try{localStorage.setItem(DEMO_DATA_KEY,JSON.stringify(remote.data));}catch(e){}}
