@@ -3,7 +3,7 @@
   --bg:#EEF3F4; --surface:#FFFFFF; --surface-2:#E4ECEE; --fg:#12242B; --muted:#566C74; --line:#CFDCE0;
   --accent:#0A6C7C; --accent-ink:#FFFFFF; --accent-soft:#D3EAEE;
   --ok:#2D7F55; --ok-soft:#D8EEE1; --warn:#A8690A; --warn-soft:#F7E8CC; --crit:#B8322B; --crit-soft:#F6D9D6;
-  --st-cola:#6F818A; --st-plan:#3866AE; --st-curso:#0A8574; --st-bloq:#B8322B; --st-inf:#80539F; --st-cerr:#4F7A5E; --st-canc:#98A6AC; --st-noap:#9A5A1E; --st-endu:#1D5F8C;
+  --st-cola:#6F818A; --st-plan:#3866AE; --st-curso:#0A8574; --st-bloq:#B8322B; --st-inf:#80539F; --st-cerr:#4F7A5E; --st-canc:#98A6AC; --st-noap:#9A5A1E; --st-endu:#1D5F8C; --st-exp:#A8690A;
   --h1:#CFE6EA; --h2:#8FC6CF; --h3:#3E97A6; --h3-ink:#FFFFFF;
   --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -14,13 +14,13 @@
   --bg:#0D161A; --surface:#142026; --surface-2:#1B2A31; --fg:#E1EBEE; --muted:#90A4AC; --line:#293B43;
   --accent:#43B4C4; --accent-ink:#04232A; --accent-soft:#123840;
   --ok:#55C28D; --ok-soft:#163626; --warn:#E3A43A; --warn-soft:#3A2D14; --crit:#EF6A60; --crit-soft:#41201E;
-  --st-cola:#8597A0; --st-plan:#6C9BE0; --st-curso:#2FBCA7; --st-bloq:#EF6A60; --st-inf:#B48AD6; --st-cerr:#6FB088; --st-canc:#5E6E75; --st-noap:#D99A5B; --st-endu:#5FB0E3;
+  --st-cola:#8597A0; --st-plan:#6C9BE0; --st-curso:#2FBCA7; --st-bloq:#EF6A60; --st-inf:#B48AD6; --st-cerr:#6FB088; --st-canc:#5E6E75; --st-noap:#D99A5B; --st-endu:#5FB0E3; --st-exp:#E3A43A;
   --h1:#163A41; --h2:#1E6370; --h3:#36A2B3; --h3-ink:#04232A; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0D161A; --surface:#142026; --surface-2:#1B2A31; --fg:#E1EBEE; --muted:#90A4AC; --line:#293B43;
   --accent:#43B4C4; --accent-ink:#04232A; --accent-soft:#123840;
   --ok:#55C28D; --ok-soft:#163626; --warn:#E3A43A; --warn-soft:#3A2D14; --crit:#EF6A60; --crit-soft:#41201E;
-  --st-cola:#8597A0; --st-plan:#6C9BE0; --st-curso:#2FBCA7; --st-bloq:#EF6A60; --st-inf:#B48AD6; --st-cerr:#6FB088; --st-canc:#5E6E75; --st-noap:#D99A5B; --st-endu:#5FB0E3;
+  --st-cola:#8597A0; --st-plan:#6C9BE0; --st-curso:#2FBCA7; --st-bloq:#EF6A60; --st-inf:#B48AD6; --st-cerr:#6FB088; --st-canc:#5E6E75; --st-noap:#D99A5B; --st-endu:#5FB0E3; --st-exp:#E3A43A;
   --h1:#163A41; --h2:#1E6370; --h3:#36A2B3; --h3-ink:#04232A; color-scheme:dark}
 
 *{box-sizing:border-box}
@@ -105,7 +105,7 @@ main{max-width:1500px;margin:0 auto;padding-block:20px 60px;padding-left:max(16p
 /* Pills & tags */
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:1px 8px;border-radius:10px;white-space:nowrap;border:1px solid currentColor}
 .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
-.st-cola{--st:var(--st-cola)} .st-plan{--st:var(--st-plan)} .st-curso{--st:var(--st-curso)} .st-bloq{--st:var(--st-bloq)} .st-inf{--st:var(--st-inf)} .st-cerr{--st:var(--st-cerr)} .st-canc{--st:var(--st-canc)} .st-noap{--st:var(--st-noap)} .st-endu{--st:var(--st-endu)}
+.st-cola{--st:var(--st-cola)} .st-plan{--st:var(--st-plan)} .st-curso{--st:var(--st-curso)} .st-bloq{--st:var(--st-bloq)} .st-inf{--st:var(--st-inf)} .st-cerr{--st:var(--st-cerr)} .st-canc{--st:var(--st-canc)} .st-noap{--st:var(--st-noap)} .st-endu{--st:var(--st-endu)} .st-exp{--st:var(--st-exp)}
 .pill.est{color:var(--st)}
 .prio{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:3px;background:var(--surface-2);color:var(--muted)}
 .prio.Urgent{background:var(--crit);color:#fff} .prio.High{background:var(--crit-soft);color:var(--crit)} .prio.Medium{background:var(--accent-soft);color:var(--accent)}
@@ -424,3 +424,13 @@ details summary{cursor:pointer;font-weight:600;font-size:14px}
   #smp-print .dlbl{border-radius:0;box-shadow:none;break-after:page;page-break-after:always}
   #smp-print .dlbl:last-child{break-after:auto;page-break-after:auto}
 }
+
+/* Codes to validate (proposals from the ARAS requests) */
+.smp-prop>summary{cursor:pointer;list-style:none;flex-wrap:wrap}
+.smp-prop>summary::-webkit-details-marker{display:none}
+.prop-list{display:grid;gap:10px;margin-top:10px}
+.prop-item{border:1px solid var(--line);border-left:4px solid var(--st-exp);border-radius:var(--r);padding:10px 12px;display:grid;gap:8px;background:var(--surface)}
+.prop{display:grid;gap:8px;min-width:0}
+.prop-h{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.prop .utbl input{max-width:84px}
+.dlg-body .prop{margin-top:10px}

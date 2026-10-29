@@ -11,9 +11,16 @@ sus **etiquetas en la DYMO LabelWriter 550**. Tiene el formato de Control de ens
 - **Muestras:** una tarjeta por PLR, con sus QTP en orden de ensayo y las muestras recibidas frente a las piezas pedidas
   (por ejemplo *2 / 6 recibidas*). Tiene además una vista de lista, filtros por estado y fase, y búsqueda por FLS, PLR, QTP o
   número de serie, con teclado o con un lector de QR o de código de barras.
-- **Numeración:** la app da a cada recepción un número `FLS-xxxxx` y a cada unidad física su sufijo `-1, -2…`, aunque haya
-  una sola unidad. Una unidad retirada conserva su número y la app no lo reutiliza.
-- **Dos columnas:** estado de la muestra (*Recibida, En espera, En ensayo, Ensayada, Almacenada, Devuelta, Desechada*) y
+- **Numeración:** la app da a cada recepción un número `FLS-xxxxx` correlativo y a cada unidad física su sufijo `-1, -2…`,
+  aunque haya una sola unidad. Una unidad retirada conserva su número y la app no lo reutiliza.
+- **Códigos desde ARAS:** el panel *Códigos por validar* propone los códigos de cada PLR activo con piezas pedidas en ARAS
+  que aún no tienen código. Si las líneas QTP piden las mismas piezas, propone un FLS para el PLR; si piden distintas, uno por
+  línea. Puedes cambiar el modo y las unidades, y validar (con o sin imprimir etiquetas), validar todos o descartar un PLR.
+  Los números se asignan al validar. El botón **Generar códigos** de cada tarjeta repite la propuesta cuando ARAS cambia o
+  para un PLR descartado. Tras importar de ARAS, la app avisa de cuántos PLR tienen códigos por validar.
+- **Pendiente de recibir:** las unidades creadas desde ARAS empiezan en ese estado y no cuentan como recibidas. Con
+  **Marcar recibidas** en la tarjeta del PLR pasan a *Recibida*, y la recepción toma la fecha del día.
+- **Dos columnas:** estado de la muestra (*Pendiente de recibir, Recibida, En espera, En ensayo, Ensayada, Almacenada, Devuelta, Desechada*) y
   fase del proyecto (*Feasibility, MSL, ESL, Pilot, Production, N/A*).
 - **Varios PLR:** puedes enlazar a más de un PLR una muestra que repite ensayo. La app acepta los números antiguos `FLT-xxxx`.
 - **Etiquetas DYMO:** tamaños 99012 (89 × 36 mm), 99010 (89 × 28 mm), 11354 (57 × 32 mm) y 11352 (54 × 25 mm), con QR que abre la muestra en

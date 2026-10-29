@@ -19,13 +19,14 @@ Desde la raíz de `management-tools`, con esta carpeta (`new-projects/muestras/`
    git apply -p1 ../new-projects/muestras/integracion/control-ensayos.patch
    ```
    El parche deja `PREVIEW=false`: la app guarda en GitHub como las demás y no ofrece datos de ejemplo.
-   Parte del commit `5f0eae9` de management-tools. Si `app.js` cambió después y el parche no aplica, rehazlo.
+   Parte del commit `338446a` de management-tools. Si `app.js` cambió después y el parche no aplica, rehazlo: es la
+   diferencia entre `control-ensayos/app.js` y `muestras/app.js` (con `PREVIEW=false`), y lo mismo para `app.css`.
 2. **Página de la app.** Crea `muestras/` con:
    - `integracion/index.html` → `muestras/index.html` (apunta a `../control-ensayos/app.js` y `app.css`, sin datos de ejemplo)
    - `integracion/sw.js` → `muestras/sw.js`
    - `manifest.webmanifest` e `icons/` tal cual
 3. **Versión de los archivos.** En `control-ensayos/index.html` y `ocupacion/index.html` cambia `?v=…` de `app.js` y `app.css`
-   por la misma versión que usa `muestras/index.html` (`20261021`), para que los navegadores carguen el código nuevo.
+   por la misma versión que usa `muestras/index.html` (`20261029`), para que los navegadores carguen el código nuevo.
 4. **Portada.** En el `index.html` raíz añade la tarjeta:
    ```html
    <a class="app" href="muestras/">
@@ -48,5 +49,7 @@ Desde la raíz de `management-tools`, con esta carpeta (`new-projects/muestras/`
 - `COL.samples='muestras'` y `DATA_COLS` incluye `muestras`, de modo que ninguna de las tres apps la borra al guardar.
 - Módulo de muestras (`smp…`): vista por PLR y lista, recepción, unidades con sufijo, estados, fases, etiquetas DYMO, QR que
   abre `muestras/#m=FLS-xxxxx-n`.
+- Códigos desde ARAS: panel *Códigos por validar*, botón *Generar códigos* por PLR, estado `expected` (pendiente de recibir)
+  y aviso al terminar una importación de ARAS. `config/samples` guarda el contador (`seq`) y los PLR descartados (`skip`).
 - Chip de muestras en el tablero y bloque de muestras en el editor de ensayos de Control de ensayos.
 - Bloque `PREVIEW` / `DEMO` (desactivado con `PREVIEW=false`); puedes borrarlo más adelante.

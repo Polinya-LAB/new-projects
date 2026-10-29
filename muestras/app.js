@@ -748,6 +748,7 @@ function importPanelAras(){
   const I=S.imp, P=arasPreview(); I.P=P;
   if(I.done) return `<section class="panel"><div class="panel-h"><h2>Imported</h2><span class="muted">${esc(I.fileName)}</span><span class="sp"></span><button class="btn sm ghost" data-act="cancel-import">Close</button></div>
     <div class="imp-sum"><span class="tag-st new">${I.done.nNew} new</span><span class="tag-st update">${I.done.nUpd} updated</span></div>
+    ${(n=>n&&!S.ro?`<div class="row" style="margin-top:8px"><span>📦 ${esc(tx('impProp',n))}</span>${APP==='samples'?`<button class="btn sm primary" data-view="samples">${esc(tx('impGo'))}</button>`:`<a class="btn sm primary" href="../muestras/">${esc(tx('impGo'))}</a>`}</div>`:'')(smpProposals().length)}
     ${I.done.rows.length?`<div class="scroll-x" style="margin-top:8px"><table class="tbl"><thead><tr><th>Result</th><th>PLR · QTP</th><th>Test</th><th>Changes</th></tr></thead><tbody>${I.done.rows.slice(0,250).map(r=>`<tr><td><span class="tag-st ${r.st}">${r.st==='update'?'Updated':r.st==='hist'?'New → History':'New'}</span></td><td class="ref nowrap">${esc(r.ref)}</td><td>${esc(r.title||'')}</td><td><small class="muted">${esc(r.changes||'')}</small></td></tr>`).join('')}</tbody></table></div>`:''}</section>
   ${statusPanel(P)}`;
   const c=k=>P.recs.filter(r=>r._st===k).length, upd=P.recs.filter(r=>r._st==='update'&&!r._quiet).length, stch=P.recs.filter(r=>r._patch&&r._patch.status).length;
@@ -1045,7 +1046,7 @@ async function saveDialog(){
   if(dlg.dataset.kind==='gh') return saveGh();
   if(dlg.dataset.kind==='smp-rc') return smpSaveReceive(false);
   if(dlg.dataset.kind==='smp-lot') return smpSaveLot();
-  if(dlg.dataset.kind==='smp-lb') return;
+  if(dlg.dataset.kind==='smp-lb'||dlg.dataset.kind==='smp-gen') return;
   if(!db||S.ro) return;
   const kind=dlg.dataset.kind, id=dlg.dataset.id, f=readForm(), now=nowIso(), T=iso(todayMs());
   try{
@@ -1129,10 +1130,11 @@ async function setTech(id,techId){
    Each reception of samples is one document in the collection "muestras": one FLS-xxxxx number per reception and
    one suffix per physical unit (-1, -2…), which keeps its number when it is withdrawn. A reception is linked to one or
    more PLRs; its tests are the ARAS tests (PLR · QTP) of those PLRs, so an ARAS import updates them here too.
+   Units whose codes come from an ARAS request start as "expected" and count as received once someone receives them.
    This tab is in Spanish with an English switch: all its texts go through tx(). */
-const SMP=['received','waiting','testing','tested','stored','returned','scrapped'];
-const SMP_CLS={received:'plan',waiting:'cola',testing:'curso',tested:'inf',stored:'cerr',returned:'endu',scrapped:'canc'};
-const SMP_DEFAULT=['received','waiting','testing','tested','stored'];
+const SMP=['expected','received','waiting','testing','tested','stored','returned','scrapped'];
+const SMP_CLS={expected:'exp',received:'plan',waiting:'cola',testing:'curso',tested:'inf',stored:'cerr',returned:'endu',scrapped:'canc'};
+const SMP_DEFAULT=['expected','received','waiting','testing','tested','stored'];
 const SMP_PHASES=['Feasibility','MSL','ESL','Pilot','Production','N/A'];
 const SMP_LABELS={
   '99012':{w:89,h:36,n:'99012 Large Address · 89 × 36 mm'},
@@ -1153,7 +1155,7 @@ es:{
   k_miss:'PLR con muestras pendientes', k_miss_s:'faltan piezas por recibir',
   k_lbl:'Etiquetas por imprimir', k_lbl_s:'unidades sin etiqueta',
   show:'Mostrar:', phaseAll:'Todas las fases', onlyMissing:'Solo PLR con muestras pendientes',
-  st:{received:'Recibida',waiting:'En espera',testing:'En ensayo',tested:'Ensayada',stored:'Almacenada',returned:'Devuelta',scrapped:'Desechada'},
+  st:{expected:'Pendiente de recibir',received:'Recibida',waiting:'En espera',testing:'En ensayo',tested:'Ensayada',stored:'Almacenada',returned:'Devuelta',scrapped:'Desechada'},
   removed:'Retirada',
   recvOf:(a,b)=>`de ${b} recibidas`, recvN:'recibidas',
   missing:n=>`Faltan ${n} muestra${n===1?'':'s'}`, complete:'Muestras completas', none:'Pendiente de recibir', extra:n=>`${n} de más`,
@@ -1190,6 +1192,18 @@ es:{
   lb_preview:'Vista previa a tamaño real',
   lb_how:'<b>En el cuadro de impresión:</b> impresora <b>DYMO LabelWriter 550</b>, tamaño de papel el de la etiqueta (p. ej. <i>99012 Large Address</i>), márgenes <b>ninguno</b>, escala <b>100 %</b> y sin encabezados ni pies de página. Sale una etiqueta por página.',
   lb_print:'Imprimir', lb_done:n=>`${n} etiqueta${n===1?'':'s'} enviada${n===1?'':'s'} a la impresora.`, lb_empty:'Marca al menos una unidad.', lb_noLib:'No se ha podido cargar la librería del código. Revisa la conexión.',
+  prop_h:n=>`Códigos por validar · ${n} PLR`, prop_help:'PLR activos con piezas pedidas en ARAS que aún no tienen código. Revisa la propuesta y valida: los números FLS se asignan al validar y las unidades quedan pendientes de recibir.',
+  prop_all:'Validar todos', prop_ok:'Validar', prop_okPrint:'Validar e imprimir etiquetas', prop_skip:'Descartar',
+  prop_mode:'Piezas', prop_plr:'Las mismas para todo el PLR', prop_line:'Distintas por QTP',
+  prop_code:'Código', prop_qtp:'Ensayos (QTP)', prop_units:'Unidades', prop_desc:'Descripción',
+  propDone:n=>`${n} código${n===1?'':'s'} FLS creado${n===1?'':'s'}.`, propNone:'No hay ninguna unidad que generar.',
+  propSkipped:p=>`${p} descartado. Puedes generar sus códigos más tarde desde su tarjeta.`,
+  gen:'Generar códigos', gen_eyebrow:'Códigos de muestra desde ARAS', gen_title:p=>`Generar códigos · ${p}`,
+  gen_help:n=>n?`Este PLR ya tiene ${n} unidad${n===1?'':'es'} con código. La propuesta cubre las piezas de ARAS que faltan; ajusta las unidades si hace falta.`:'La propuesta sale de las piezas pedidas en ARAS; ajusta las unidades si hace falta.',
+  recvExp:n=>`✓ Marcar recibidas (${n})`, recvDone:n=>`${n} unidad${n===1?'':'es'} marcada${n===1?'':'s'} como recibida${n===1?'':'s'}.`,
+  expN:n=>`${n} pendiente${n===1?'':'s'} de recibir`,
+  impProp:n=>`${n} PLR con códigos de muestra por validar.`, impGo:'Ir a Muestras',
+  log_gen:n=>`Códigos generados desde ARAS (${n} ud${n===1?'':'s'}.)`,
   ed_title:p=>`Muestras de ${p}`, ed_none:'Aún no se ha recibido ninguna muestra de este PLR.', chip:(r,p)=>p?`Muestras ${r}/${p}`:`Muestras ${r}`, notFound:c=>`No hay ninguna muestra ${c}.`
 },
 en:{
@@ -1204,7 +1218,7 @@ en:{
   k_miss:'PLRs missing samples', k_miss_s:'pieces still to receive',
   k_lbl:'Labels to print', k_lbl_s:'units without a label',
   show:'Show:', phaseAll:'All phases', onlyMissing:'Only PLRs missing samples',
-  st:{received:'Received',waiting:'Waiting',testing:'Under test',tested:'Tested',stored:'Stored',returned:'Returned',scrapped:'Scrapped'},
+  st:{expected:'Expected',received:'Received',waiting:'Waiting',testing:'Under test',tested:'Tested',stored:'Stored',returned:'Returned',scrapped:'Scrapped'},
   removed:'Withdrawn',
   recvOf:(a,b)=>`of ${b} received`, recvN:'received',
   missing:n=>`${n} sample${n===1?'':'s'} missing`, complete:'All samples in', none:'Not received yet', extra:n=>`${n} extra`,
@@ -1241,17 +1255,30 @@ en:{
   lb_preview:'Preview at real size',
   lb_how:'<b>In the print dialog:</b> printer <b>DYMO LabelWriter 550</b>, paper size of the label (e.g. <i>99012 Large Address</i>), margins <b>none</b>, scale <b>100%</b> and no headers or footers. One label per page.',
   lb_print:'Print', lb_done:n=>`${n} label${n===1?'':'s'} sent to the printer.`, lb_empty:'Tick at least one unit.', lb_noLib:'Could not load the code library. Check the connection.',
+  prop_h:n=>`Codes to validate · ${n} PLR${n===1?'':'s'}`, prop_help:'Active PLRs with pieces requested in ARAS that have no code yet. Check the proposal and validate: the FLS numbers are assigned when you validate, and the units wait to be received.',
+  prop_all:'Validate all', prop_ok:'Validate', prop_okPrint:'Validate and print labels', prop_skip:'Dismiss',
+  prop_mode:'Pieces', prop_plr:'Same for the whole PLR', prop_line:'Different per QTP',
+  prop_code:'Code', prop_qtp:'Tests (QTP)', prop_units:'Units', prop_desc:'Description',
+  propDone:n=>`${n} FLS code${n===1?'':'s'} created.`, propNone:'There are no units to create.',
+  propSkipped:p=>`${p} dismissed. You can create its codes later from its card.`,
+  gen:'Create codes', gen_eyebrow:'Sample codes from ARAS', gen_title:p=>`Create codes · ${p}`,
+  gen_help:n=>n?`This PLR already has ${n} unit${n===1?'':'s'} with a code. The proposal covers the ARAS pieces still missing; change the units if needed.`:'The proposal comes from the pieces requested in ARAS; change the units if needed.',
+  recvExp:n=>`✓ Mark received (${n})`, recvDone:n=>`${n} unit${n===1?'':'s'} marked as received.`,
+  expN:n=>`${n} expected`,
+  impProp:n=>`${n} PLR${n===1?'':'s'} with sample codes to validate.`, impGo:'Go to Samples',
+  log_gen:n=>`Codes created from ARAS (${n} unit${n===1?'':'s'})`,
   ed_title:p=>`Samples of ${p}`, ed_none:'No samples of this PLR have been received yet.', chip:(r,p)=>p?`Samples ${r}/${p}`:`Samples ${r}`, notFound:c=>`There is no sample ${c}.`
 }};
 let SMP_LANG='es'; try{SMP_LANG=localStorage.getItem('tl.lang')==='en'?'en':'es';}catch(e){}
 const tx=(k,...a)=>{const v=SMP_I18N[SMP_LANG][k]??SMP_I18N.es[k]??k; return typeof v==='function'?v(...a):v;};
 const smpSt=s=>tx('st')[s]||s;
 S.samples=[];
-S.smp={sv:'plr',sst:new Set(SMP_DEFAULT),phase:'',onlyMissing:false,collapsed:new Set(),sel:new Set(),edit:null,rc:null,lb:null};
+S.smp={sv:'plr',sst:new Set(SMP_DEFAULT),phase:'',onlyMissing:false,collapsed:new Set(),sel:new Set(),edit:null,rc:null,lb:null,prop:{}};
 try{if(localStorage.getItem('tl.smp.view')==='list') S.smp.sv='list';}catch(e){}
 
 /* Helpers */
 const smpLive=l=>(l.units||[]).filter(u=>!u.removed);
+const smpIn=l=>smpLive(l).filter(u=>u.state!=='expected');   // units physically received
 const smpCode=(l,u)=>`${l.code}-${u.n}`;
 const smpKey=(l,u)=>`${l.id}:${u.n}`;
 const smpByKey=k=>{const [id,n]=String(k).split(':'); const l=S.samples.find(x=>x.id===id); const u=l&&(l.units||[]).find(x=>x.n===+n); return l&&u?{l,u}:null;};
@@ -1263,8 +1290,14 @@ function smpLotTests(l){
   const ids=new Set(l.tests||[]);
   return (l.plrs||[]).flatMap(p=>{const all=smpTestsOfPlr(p), picked=all.filter(x=>ids.has(x.id)); return picked.length?picked:all;});
 }
-const smpPieces=p=>Math.max(0,...smpTestsOfPlr(p).map(x=>+x.pieces||0));
-const smpRecv=p=>S.samples.filter(l=>(l.plrs||[]).includes(smpPlrKey(p))).reduce((a,l)=>a+smpLive(l).length,0);
+/* Pieces a PLR expects: its lines share the samples (the largest number of pieces of a line), unless its receptions are
+   split per QTP line, as "different per QTP" creates them: then each line brings its own pieces. */
+function smpPieces(p){
+  const ts=smpTestsOfPlr(p), ids=new Set(ts.map(x=>x.id)), own=new Set();
+  S.samples.filter(l=>(l.plrs||[]).includes(smpPlrKey(p))).forEach(l=>{const mine=(l.tests||[]).filter(id=>ids.has(id)); if(mine.length===1) own.add(mine[0]);});
+  return own.size>1?ts.reduce((a,x)=>a+(+x.pieces||0),0):Math.max(0,...ts.map(x=>+x.pieces||0));
+}
+const smpRecv=p=>S.samples.filter(l=>(l.plrs||[]).includes(smpPlrKey(p))).reduce((a,l)=>a+smpIn(l).length,0);
 const smpNum=l=>+((String(l.code||'').match(/\d{5}/)||[0])[0]);
 const smpNextSeq=()=>Math.max(+((S.cfg.samples||{}).seq)||0,0,...S.samples.map(smpNum))+1;
 const smpFmtCode=n=>`FLS-${String(n).padStart(5,'0')}`;
@@ -1292,18 +1325,87 @@ function smpGroups(){
   S.samples.forEach(l=>(l.plrs||[]).forEach(p=>get(p).lots.push(l)));
   return [...M.values()].map(g=>{ g.tests.sort(smpBySeq);
     g.active=g.tests.some(x=>ACTIVE.includes(x.status)&&x.status!=='Not approved'); g.legacy=!g.tests.length;
-    g.pieces=Math.max(0,...g.tests.map(x=>+x.pieces||0)); g.recv=g.lots.reduce((a,l)=>a+smpLive(l).length,0);
+    g.pieces=smpPieces(g.plr); g.recv=g.lots.reduce((a,l)=>a+smpIn(l).length,0); g.exp=g.lots.flatMap(l=>smpLive(l).filter(u=>u.state==='expected').map(u=>smpKey(l,u)));
     g.project=(g.tests[0]||{}).project||(g.lots[0]||{}).project||''; g.requester=(g.tests[0]||{}).requester||'';
     g.rc=g.legacy?'rc-legacy':!g.active?'rc-closed':g.recv===0?'rc-none':g.pieces&&g.recv<g.pieces?'rc-part':'rc-ok';
     g.rank=g.legacy?4:!g.active?3:g.rc==='rc-ok'?2:g.rc==='rc-part'?0:1; return g;});
 }
 function smpKpis(){
   const U=S.samples.flatMap(smpLive), n=s=>U.filter(u=>u.state===s).length;
-  return {inlab:U.filter(u=>!['returned','scrapped'].includes(u.state)).length,wait:n('received')+n('waiting'),test:n('testing'),done:n('tested'),
+  return {inlab:U.filter(u=>!['expected','returned','scrapped'].includes(u.state)).length,wait:n('received')+n('waiting'),test:n('testing'),done:n('tested'),
     miss:smpGroups().filter(g=>g.active&&g.pieces>g.recv).length,lbl:U.filter(u=>!u.printed).length};
 }
 const smpMissingCount=()=>smpGroups().filter(g=>g.active&&g.pieces>g.recv).length;
 const smpPending=()=>S.samples.flatMap(l=>smpLive(l).filter(u=>!u.printed).map(u=>smpKey(l,u)));
+
+/* ---------- Codes from the ARAS requests ----------
+   Every active PLR with pieces in ARAS and no codes gets a proposal: one reception for the whole PLR when its QTP lines
+   share the samples, or one per line when each line has its own pieces (the default when the lines ask for different
+   numbers of pieces). A proposal takes no number: the next free FLS numbers go to it when someone validates it. */
+const smpCfg=()=>S.cfg.samples||{};
+const smpSkipped=p=>!!(smpCfg().skip||{})[smpPlrKey(p)];
+const smpLines=p=>smpTestsOfPlr(p).filter(x=>ACTIVE.includes(x.status)&&x.status!=='Not approved'&&+x.pieces>0);
+function smpProposal(p){
+  p=smpPlrKey(p); const st=S.smp.prop[p]||{}, ls=smpLines(p), all=smpTestsOfPlr(p), t0=all[0]||{};
+  const mode=ls.length>1?(st.mode||(new Set(ls.map(x=>+x.pieces)).size>1?'line':'plr')):'plr';
+  const lots=S.samples.filter(l=>(l.plrs||[]).includes(p)), units=ls2=>ls2.reduce((a,l)=>a+smpLive(l).length,0);
+  const groups=mode==='line'
+    ?ls.map(x=>({key:x.id,tests:[x.id],qtps:[x.qtp],desc:x.title||t0.project||p,need:Math.max(0,+x.pieces-units(lots.filter(l=>(l.tests||[]).includes(x.id))))}))
+    :[(src=>({key:'plr',tests:src.map(x=>x.id),qtps:src.map(x=>x.qtp),desc:[...new Set(src.map(x=>x.title).filter(Boolean))].join(' / ')||t0.project||p,
+        need:Math.max(0,Math.max(0,...ls.map(x=>+x.pieces))-units(lots))}))(ls.length?ls:all)];
+  // A forced proposal (button on the card) offers one unit when ARAS asks for nothing more.
+  const none=!groups.some(g=>g.need);
+  groups.forEach((g,i)=>{const q=(st.qty||{})[g.key]; g.qty=q!=null?q:st.force&&none&&!i?1:g.need;});
+  return {plr:p,mode,canSplit:ls.length>1,groups,project:t0.project||'',requester:t0.requester||'',have:units(lots)};
+}
+const smpProposals=()=>smpGroups().filter(g=>g.active&&!g.legacy&&!smpSkipped(g.plr)).map(g=>smpProposal(g.plr)).filter(P=>P.groups.some(g=>g.need>0));
+/* One proposal; next.n numbers the preview in the order shown. */
+function smpPropBlock(P,next){
+  const rows=P.groups.map(g=>{const n=g.qty>0?next.n++:0;
+    return `<tr><td class="ref nowrap">${n?esc(smpFmtCode(n))+(g.qty>1?`-1…${g.qty}`:'-1'):'<span class="muted">—</span>'}</td><td>${esc(g.qtps.join(' · ')||'—')}</td>
+      <td><input type="number" min="0" max="200" data-pq="${esc(P.plr)}|${esc(g.key)}" value="${g.qty}" aria-label="${esc(tx('prop_units'))} ${esc(g.qtps.join(' '))}"></td><td>${esc(g.desc)}</td></tr>`;}).join('');
+  return `<div class="prop"><div class="prop-h"><b class="ref">${esc(P.plr)}</b>${smpProj(P.project)}${P.requester?`<span class="muted">${esc(tx('by'))} ${esc(P.requester)}</span>`:''}
+      ${P.canSplit?`<span class="sp"></span><span class="muted" style="font-size:13px">${esc(tx('prop_mode'))}</span><div class="seg" role="group" aria-label="${esc(tx('prop_mode'))}"><button type="button" data-sa="prop-mode" data-plr="${esc(P.plr)}" data-m="plr" aria-pressed="${P.mode==='plr'}">${esc(tx('prop_plr'))}</button><button type="button" data-sa="prop-mode" data-plr="${esc(P.plr)}" data-m="line" aria-pressed="${P.mode==='line'}">${esc(tx('prop_line'))}</button></div>`:''}</div>
+    <div class="scroll-x"><table class="utbl"><thead><tr><th>${esc(tx('prop_code'))}</th><th>${esc(tx('prop_qtp'))}</th><th>${esc(tx('prop_units'))}</th><th>${esc(tx('prop_desc'))}</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+const smpPropActs=p=>`<button type="button" class="btn sm ghost" data-sa="prop-skip" data-plr="${esc(p)}">${esc(tx('prop_skip'))}</button><span class="sp"></span><button type="button" class="btn sm" data-sa="prop-ok" data-plr="${esc(p)}">${esc(tx('prop_ok'))}</button><button type="button" class="btn sm primary" data-sa="prop-ok-print" data-plr="${esc(p)}">🏷 ${esc(tx('prop_okPrint'))}</button>`;
+function smpPropPanel(){
+  if(S.ro||S.noDb) return ''; const Ps=smpProposals(); if(!Ps.length) return '';
+  const next={n:smpNextSeq()};
+  return `<details class="panel smp-prop" open><summary class="panel-h"><h2>${esc(tx('prop_h',Ps.length))}</h2><span class="muted">${esc(tx('prop_help'))}</span><span class="sp"></span>${Ps.length>1?`<button type="button" class="btn sm primary" data-sa="prop-all">${esc(tx('prop_all'))}</button>`:''}</summary>
+    <div class="prop-list">${Ps.map(P=>`<div class="prop-item">${smpPropBlock(P,next)}<div class="row">${smpPropActs(P.plr)}</div></div>`).join('')}</div></details>`;
+}
+/* Validating creates the receptions with consecutive numbers and the counter in one commit; the units wait as "expected". */
+async function smpValidate(plrs,print){
+  if(S.ro||!db) return;
+  let n=smpNextSeq()-1, made=0; const now=nowIso(), jobs=[], keys=[], skip={...(smpCfg().skip||{})};
+  for(const p of plrs){ const P=smpProposal(p);
+    for(const g of P.groups){ if(!(g.qty>0)) continue; n++; made++; const id=rid();
+      const units=Array.from({length:g.qty},(_,i)=>({n:i+1,state:'expected',serial:'',loc:'',note:'',removed:false,printed:false}));
+      jobs.push(db.doc(`${COL.samples}/${id}`).set({code:smpFmtCode(n),plrs:[P.plr],tests:g.tests,desc:g.desc,pn:'',phase:'',project:P.project,received:'',by:'',loc:'',comments:'',
+        units,source:'ARAS',log:[smpLog('log_gen',g.qty)],created:now,updated:now}));
+      units.forEach(u=>keys.push(`${id}:${u.n}`)); }
+    delete skip[P.plr]; delete S.smp.prop[P.plr]; }
+  if(!made) return toast(tx('propNone'));
+  jobs.push(db.doc('config/samples').set({...smpCfg(),seq:n,skip,updated:now}));
+  try{await Promise.all(jobs); if(dlg.open&&dlg.dataset.kind==='smp-gen') dlg.close(); toast(tx('propDone',made)); render(); if(print) smpOpenLabels(keys);}
+  catch(e){toast(errMsg(e));}
+}
+async function smpSkip(p){
+  if(S.ro||!db) return; p=smpPlrKey(p);
+  try{await db.doc('config/samples').set({...smpCfg(),skip:{...(smpCfg().skip||{}),[p]:true},updated:nowIso()}); delete S.smp.prop[p]; toast(tx('propSkipped',p)); render();}catch(e){toast(errMsg(e));}
+}
+/* "Create codes" on a PLR card: the same proposal in a dialog, also for a dismissed PLR or one ARAS has changed. */
+function smpOpenGen(p){
+  if(S.ro) return; p=smpPlrKey(p); S.smp.prop[p]={...(S.smp.prop[p]||{}),force:true};
+  dlg.dataset.kind='smp-gen'; dlg.dataset.id=p; smpGenRender(); if(!dlg.open) dlg.showModal();
+}
+function smpGenRender(){
+  const P=smpProposal(dlg.dataset.id);
+  dlg.innerHTML=smpShell(tx('gen_eyebrow'),tx('gen_title',P.plr),`<p class="note">${esc(tx('gen_help',P.have))}</p>${smpPropBlock(P,{n:smpNextSeq()})}`,
+    `<span class="sp"></span><button type="button" class="btn ghost" data-act="close">${esc(tx('cancel'))}</button><button type="button" class="btn" data-sa="prop-ok" data-plr="${esc(P.plr)}">${esc(tx('prop_ok'))}</button><button type="button" class="btn primary" data-sa="prop-ok-print" data-plr="${esc(P.plr)}">🏷 ${esc(tx('prop_okPrint'))}</button>`);
+}
+const smpPropRerender=()=>dlg.open&&dlg.dataset.kind==='smp-gen'?smpGenRender():render();
 
 /* Board cards and the test editor show the samples of the PLR. */
 function smpTestChip(t){
@@ -1338,6 +1440,7 @@ function vSamples(){
     ${smpLangSeg()}
     <button class="btn" data-sa="labels-pending">🏷 ${esc(tx('labels',k.lbl))}</button>
     ${S.ro?'':`<button class="btn primary" data-sa="receive">${esc(tx('receive'))}</button>`}</div>
+  ${smpPropPanel()}
   <section class="kpis">
     ${kpi('inlab',tx('k_inlab'),k.inlab,tx('k_inlab_s'))}
     ${kpi('wait',tx('k_wait'),k.wait,tx('k_wait_s'))}
@@ -1378,7 +1481,7 @@ function smpCard(g){
       <div class="recv"><b>${g.recv}</b>${g.pieces?` / ${g.pieces}`:''}<br>${esc(g.pieces?tx('recvOf',g.recv,g.pieces):tx('recvN'))}<div class="prog"><span style="width:${pct}%"></span></div></div></div>
     ${g.tests.length?`<ol class="qlines">${g.tests.map(x=>`<li><span class="seq">${esc(x.sequence||'·')}</span><button type="button" class="link ref" data-act="edit" data-id="${esc(x.id)}">${esc(x.qtp)}</button><span class="tt" title="${esc(x.title)}">${esc(x.title)}</span>${estPill(x.status)}${resTag(x.result)}</li>`).join('')}</ol>`:''}
     <div class="lots">${shown.map(l=>smpLotBtn(l,g.plr)).join('')||(g.lots.length?'':`<p class="note">${esc(tx('noLots'))}</p>`)}${hidden?`<span class="hidden-n">${esc(tx('hiddenN',hidden))}</span>`:''}</div>
-    <div class="pc-f">${status}<span class="sp"></span>${g.legacy||S.ro?'':`<button class="btn sm" data-sa="receive" data-plr="${esc(g.plr)}">${esc(tx('receiveFor'))}</button>`}</div>
+    <div class="pc-f">${status}${g.exp.length?`<span class="wtag mut">${esc(tx('expN',g.exp.length))}</span>`:''}<span class="sp"></span>${g.legacy||S.ro?'':`${g.exp.length?`<button class="btn sm primary" data-sa="recv-exp" data-plr="${esc(g.plr)}">${esc(tx('recvExp',g.exp.length))}</button>`:''}<button class="btn sm" data-sa="gen" data-plr="${esc(g.plr)}">${esc(tx('gen'))}</button><button class="btn sm" data-sa="receive" data-plr="${esc(g.plr)}">${esc(tx('receiveFor'))}</button>`}</div>
   </article>`;
 }
 function smpList(){
@@ -1479,7 +1582,7 @@ async function smpSaveReceive(print){
     received:g('received')||iso(todayMs()),by:g('by'),loc:g('loc'),comments:g('comments'),units,log:[smpLog('log_recv',units.length)],created:now,updated:now};
   try{
     /* The reception and the counter go in the same commit. */
-    await Promise.all([db.doc(`${COL.samples}/${id}`).set(data),db.doc('config/samples').set({seq:n,updated:now})]);
+    await Promise.all([db.doc(`${COL.samples}/${id}`).set(data),db.doc('config/samples').set({...smpCfg(),seq:n,updated:now})]);
     dlg.close(); toast(tx('saved',code)); render();
     if(print) smpOpenLabels(units.map(u=>`${id}:${u.n}`));
   }catch(e){formErr(errMsg(e));}
@@ -1540,6 +1643,7 @@ async function smpSaveLot(){
     else if(u.state!==o.state) log.push(smpLog('log_state',c,{st:o.state},{st:u.state})); }
   /* Removing a PLR from the reception drops its ticked tests. */
   const keep=new Set(S.tests.filter(x=>plrs.includes(smpPlrKey(x.plr))).map(x=>x.id));
+  if(!fields.received&&e.units.some(u=>u.state!=='expected'&&!u.removed&&((old.units||[]).find(x=>x.n===u.n)||{}).state==='expected')) fields.received=iso(todayMs());
   const patch={...fields,plrs,units:e.units.map(({n,state,serial,loc,note,removed,printed})=>({n,state,serial:String(serial||'').trim(),loc:String(loc||'').trim(),note:String(note||'').trim(),removed:!!removed,printed:!!printed})),
     tests:(old.tests||[]).filter(id=>keep.has(id)),log:[...(old.log||[]),...log],updated:nowIso()};
   try{await db.doc(`${COL.samples}/${old.id}`).update(patch); dlg.close(); toast(tx('saved',old.code));}catch(err){formErr(errMsg(err));}
@@ -1553,8 +1657,9 @@ async function smpDeleteLot(btn){
 async function smpSetStates(keys,state){
   if(S.ro||!db) return;
   const by=new Map(); keys.map(smpByKey).filter(Boolean).forEach(({l,u})=>{ if(!by.has(l)) by.set(l,[]); by.get(l).push(u.n); });
-  const jobs=[...by].map(([l,ns])=>{const log=[]; const units=(l.units||[]).map(u=>{ if(!ns.includes(u.n)||u.removed||u.state===state) return u; log.push(smpLog('log_state',smpCode(l,u),{st:u.state},{st:state})); return {...u,state}; });
-    return log.length?db.doc(`${COL.samples}/${l.id}`).update({units,log:[...(l.log||[]),...log],updated:nowIso()}):null;}).filter(Boolean);
+  const jobs=[...by].map(([l,ns])=>{const log=[]; let arrived=false; const units=(l.units||[]).map(u=>{ if(!ns.includes(u.n)||u.removed||u.state===state) return u; if(u.state==='expected') arrived=true; log.push(smpLog('log_state',smpCode(l,u),{st:u.state},{st:state})); return {...u,state}; });
+    /* The first expected unit that arrives gives the reception its date. */
+    return log.length?db.doc(`${COL.samples}/${l.id}`).update({units,log:[...(l.log||[]),...log],...(arrived&&!l.received?{received:iso(todayMs())}:{}),updated:nowIso()}):null;}).filter(Boolean);
   try{await Promise.all(jobs);}catch(e){toast(errMsg(e));}
 }
 
@@ -1580,7 +1685,7 @@ function smpLabel(k,c){
   const x=smpByKey(k); if(!x) return ''; const {l,u}=x, code=smpCode(l,u), sz=SMP_LABELS[c.size]||SMP_LABELS['99012'];
   const qtps=smpLotTests(l).map(y=>y.qtp);
   const l2=[(l.plrs||[]).join(' · '),qtps.length?qtps[0]+(qtps.length>1?` +${qtps.length-1}`:''):''].filter(Boolean).join(' · ');
-  const ft=[c.proj&&projectNo(l),c.phase&&l.phase,c.date&&fmt(l.received)].filter(Boolean).join(' · ');
+  const ft=[c.proj&&projectNo(l),c.phase&&l.phase,c.date&&l.received&&fmt(l.received)].filter(Boolean).join(' · ');
   /* Code height that fits the text column: the QR takes a square of the label height, the barcode a strip at the bottom. */
   const textW=sz.w-4.4-(c.code==='qr'?sz.h-3.2+2:0), fs=Math.min(sz.h*(c.code==='bar'?.13:.16),textW/(code.length*.62)).toFixed(2);
   return `<div class="dlbl ${c.code==='bar'?'wbar':''} ${sz.h<=28?'sm':''}" style="width:${sz.w}mm;height:${sz.h}mm;--fs:${fs}mm">
@@ -1650,7 +1755,7 @@ document.addEventListener('click',ev=>{
   else if(a==='kpi'){const k=el.dataset.k;
     if(k==='lbl') return smpOpenLabels(smpPending());
     if(k==='miss'){V.sv='plr'; V.onlyMissing=true; V.sst=new Set(SMP_DEFAULT);}
-    else {V.sv='list'; V.onlyMissing=false; V.sst=new Set({inlab:SMP_DEFAULT,wait:['received','waiting'],test:['testing'],done:['tested']}[k]);}
+    else {V.sv='list'; V.onlyMissing=false; V.sst=new Set({inlab:SMP_DEFAULT.filter(s=>s!=='expected'),wait:['received','waiting'],test:['testing'],done:['tested']}[k]);}
     render();}
   else if(a==='labels-pending'){const keys=smpPending(); smpOpenLabels(keys.length?keys:[...V.sel]);}
   else if(a==='print-sel') smpOpenLabels([...V.sel]);
@@ -1664,6 +1769,12 @@ document.addEventListener('click',ev=>{
   else if(a==='lb-all'){V.lb.checked=new Set(V.lb.keys); smpLbSide(); smpLbPreview();}
   else if(a==='lb-none'){V.lb.checked.clear(); smpLbSide(); smpLbPreview();}
   else if(a==='do-print') smpPrint();
+  else if(a==='gen') smpOpenGen(el.dataset.plr);
+  else if(a==='prop-mode'){const p=el.dataset.plr; V.prop[p]={...(V.prop[p]||{}),mode:el.dataset.m,qty:{}}; smpPropRerender();}
+  else if(a==='prop-ok'||a==='prop-ok-print'){el.disabled=true; Promise.resolve(smpValidate([el.dataset.plr],a==='prop-ok-print')).finally(()=>{if(el.isConnected) el.disabled=false;});}
+  else if(a==='prop-all'){ev.preventDefault(); el.disabled=true; Promise.resolve(smpValidate(smpProposals().map(P=>P.plr),false)).finally(()=>{if(el.isConnected) el.disabled=false;});}
+  else if(a==='prop-skip') smpSkip(el.dataset.plr);
+  else if(a==='recv-exp'){const g=smpGroups().find(x=>x.plr===el.dataset.plr); if(g&&g.exp.length){const n=g.exp.length; smpSetStates(g.exp,'received').then(()=>toast(tx('recvDone',n)));}}
 });
 document.addEventListener('input',ev=>{
   const el=ev.target;
@@ -1684,6 +1795,7 @@ document.addEventListener('change',ev=>{
   else if(el.id==='smp-all-to'&&el.value){V.edit.units.forEach(u=>{if(!u.removed) u.state=el.value;}); el.value=''; smpLotUnits();}
   else if(el.dataset.lbk){el.checked?V.lb.checked.add(el.dataset.lbk):V.lb.checked.delete(el.dataset.lbk); smpLbPreview();}
   else if(el.dataset.lbc) smpLbSet(el.dataset.lbc,el.checked);
+  else if(el.dataset.pq){const [p,k]=el.dataset.pq.split('|'), st=V.prop[p]=V.prop[p]||{}; st.qty={...(st.qty||{}),[k]:Math.max(0,Math.min(200,parseInt(el.value)||0))}; smpPropRerender();}
   else if(el.id==='smp-lb-size') smpLbSet('size',el.value);
   else if(el.name==='smp-lb-code') smpLbSet('code',el.value);
 });

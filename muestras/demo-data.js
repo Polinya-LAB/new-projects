@@ -45,6 +45,8 @@ window.CE_DEMO=function(){
   const t10=T('PLR003706','QTP0381','Water Ingress Test (IPX5)','24040 - OUTDOOR SHOWER RENEWAL','Clara Roig',3,1,'Report',{techId:'p-laura',start:ago(20),progress:90});
   const t11=T('PLR003707','QTP0761','Assembly test','24031 - NEW VS PUMP','Ana Ruiz',2,1,'Queued');
   const t12=T('PLR003708','QTP0217','Pump Performance Curve','25020 - COMPACT FILTER PUMP','Clara Roig',2,1,'Queued');
+  T('PLR003709','QTP0741','Sound Power Test','25031 - HEAT PUMP SILENT','Sergi Mas',2,1,'Queued');
+  T('PLR003709','QTP0264','Accelerated UV Weathering Test (QUV)','25031 - HEAT PUMP SILENT','Sergi Mas',4,2,'Queued');
   const U=(n,state,x={})=>({n,state,serial:'',loc:'',note:'',removed:false,printed:true,...x});
   const muestras={};
   const L=(id,code,plrs,testIds,desc,pn,phase,k,by,loc,comments,units,project)=>{muestras[id]={code,plrs,tests:testIds,desc,pn,phase,received:ago(k),by,loc,comments,units,
