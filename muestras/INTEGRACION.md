@@ -1,13 +1,13 @@
 # Integrar Muestras en management-tools
 
-Muestras se incorpora como **una aplicación más** del portal, igual que Ocupación: su propia página `muestras/`, con el
+Muestras entra en el portal como **otra aplicación**, igual que Ocupación: su propia página `muestras/`, con el
 código compartido de Control de ensayos (`control-ensayos/app.js` y `app.css`) y los mismos datos (`ensayos/ensayos.json`
-en `lab-data`, colección nueva `muestras`). Control de ensayos no gana ninguna pestaña: solo muestra en el tablero el chip
+en `lab-data`, colección nueva `muestras`). Control de ensayos mantiene sus pestañas: muestra en el tablero el chip
 *📦 Muestras x/y* de cada PLR y, al abrir un ensayo, sus muestras.
 
-> ⚠️ **Antes de registrar muestras de verdad** tiene que estar publicado el `app.js` nuevo. El actual, al guardar, borra del
-> archivo las colecciones que no conoce: si alguien guardara con la versión antigua, se perderían las muestras.
-> Como Control de ensayos, Ocupación y Muestras comparten `app.js`, al aplicar el paso 1 quedan todas actualizadas a la vez.
+> ⚠️ **Antes de registrar muestras reales**, publica el `app.js` nuevo. El actual, al guardar, borra del archivo las
+> colecciones que no conoce: si alguien guarda con la versión antigua, borra las muestras.
+> Control de ensayos, Ocupación y Muestras comparten `app.js`, así que el paso 1 actualiza las tres a la vez.
 
 ## Pasos
 
@@ -18,10 +18,10 @@ Desde la raíz de `management-tools`, con esta carpeta (`new-projects/muestras/`
    ```
    git apply -p1 ../new-projects/muestras/integracion/control-ensayos.patch
    ```
-   El parche ya deja `PREVIEW=false`: la app guarda en GitHub como las demás y no ofrece datos de ejemplo.
-   Está hecho sobre el commit `5f0eae9` de management-tools; si `app.js` ha cambiado después y no aplica, hay que rehacerlo.
+   El parche deja `PREVIEW=false`: la app guarda en GitHub como las demás y no ofrece datos de ejemplo.
+   Parte del commit `5f0eae9` de management-tools. Si `app.js` cambió después y el parche no aplica, rehazlo.
 2. **Página de la app.** Crea `muestras/` con:
-   - `integracion/index.html` → `muestras/index.html` (ya apunta a `../control-ensayos/app.js` y `app.css`, sin datos de ejemplo)
+   - `integracion/index.html` → `muestras/index.html` (apunta a `../control-ensayos/app.js` y `app.css`, sin datos de ejemplo)
    - `integracion/sw.js` → `muestras/sw.js`
    - `manifest.webmanifest` e `icons/` tal cual
 3. **Versión de los archivos.** En `control-ensayos/index.html` y `ocupacion/index.html` cambia `?v=…` de `app.js` y `app.css`
@@ -49,4 +49,4 @@ Desde la raíz de `management-tools`, con esta carpeta (`new-projects/muestras/`
 - Módulo de muestras (`smp…`): vista por PLR y lista, recepción, unidades con sufijo, estados, fases, etiquetas DYMO, QR que
   abre `muestras/#m=FLS-xxxxx-n`.
 - Chip de muestras en el tablero y bloque de muestras en el editor de ensayos de Control de ensayos.
-- Bloque `PREVIEW` / `DEMO` (desactivado con `PREVIEW=false`); se puede borrar más adelante.
+- Bloque `PREVIEW` / `DEMO` (desactivado con `PREVIEW=false`); puedes borrarlo más adelante.

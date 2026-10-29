@@ -1,5 +1,5 @@
 /* Service worker of the Muestras desktop app. It keeps the app files (and the libraries from the CDN) so the app opens
-   without connection, and refreshes them in the background. Lab data (GitHub API and raw files) is never cached here. */
+   without connection, and refreshes them in the background. It never caches lab data (GitHub API and raw files). */
 const CACHE='muestras-v20261021';
 const SHELL=['./','index.html','../control-ensayos/app.js?v=20261021','../control-ensayos/app.css?v=20261021','manifest.webmanifest','icons/icon.svg','icons/icon-192.png','icons/icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));});

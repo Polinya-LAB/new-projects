@@ -41,7 +41,7 @@
 <script src="../control-ensayos/app.js?v=20261021"></script>
 <script>
 /* Desktop app (PWA): Chrome or Edge offer to install it from the published page (https). The service worker keeps the
-   app files so it opens without connection; the lab data is always read from GitHub. */
+   app files so it opens without connection; the app always reads lab data from GitHub. */
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 (()=>{let ev=null; const b=document.getElementById('btn-install');
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault(); ev=e; b.hidden=false;});

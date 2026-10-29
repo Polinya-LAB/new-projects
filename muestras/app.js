@@ -144,7 +144,7 @@ const statusSel=t=>S.ro?estPill(t.status):`<select class="st-sel st-${ST_CLS[t.s
 
 /* ---------- Duration and end date ---------- */
 /* A QTP can give its duration and technician hours per test or per sample; per sample they are
-   multiplied by the test's number of pieces (counted as 1 when the test has no pieces set). */
+   multiplied by the test's number of pieces (1 when the test has no pieces set). */
 const piecesSet=t=>parseInt(t.pieces)>0;
 const samplesOf=t=>Math.max(1,parseInt(t.pieces)||0);
 const round2=x=>Math.round(x*100)/100;
@@ -209,7 +209,7 @@ function techPlan(t,s,e,openEnd){
   return {m,tags,parts:{setupDays:setup.length,teardownDays:teardown.length,dailyDays,reviews}};
 }
 const planTotal=pl=>[...pl.m.values()].reduce((a,b)=>a+b,0);
-/* Total technician hours. Unscheduled endurance tests are simulated from the next working day. */
+/* Total technician hours. The app simulates unscheduled endurance tests from the next working day. */
 function effTech(t){
   if(!isEndu(t)) return evenTech(t);
   const s=d(t.start)??nextWork(todayMs()), ei=endInfo({...t,start:iso(s)});
@@ -709,7 +709,7 @@ function arasPreview(){
     if(!t.equipmentId&&r._eq){patch.equipmentId=r._eq; changes.push('equipment');}
     if(!t.techId&&r._tech){patch.techId=r._tech; changes.push('technician');}
     if(!t.start&&r.start){patch.start=r.start; changes.push('start');}
-    /* A different status is never applied on its own: it is asked. Keeping the app status is remembered until ARAS changes again. */
+    /* The import asks before applying a different status. A choice to keep the app status holds until ARAS changes again. */
     if(st&&!(ARAS_SAME[st]||[st]).includes(t.status)&&t.arasStatusKept!==r.status) r._conflict={id:t.id,from:t.status,to:st,aras:r.status};
     if(t.arasStatusKept&&t.arasStatusKept!==r.status) patch.arasStatusKept='';
     r._patch=patch; r._changes=changes; r._st=Object.keys(patch).length?'update':'same';
@@ -807,7 +807,7 @@ async function runArasImport(){
         jobs.push(()=>db.doc(`${COL.tests}/${r._match.id}`).update(patch)); if(!r._quiet){nUpd++; doneRows.push({st:'update',ref:`${r.plr} · ${r.qtp}`,title:r.title,changes:r._changes.join(', ')});}
       }
     }
-    /* All writes are queued together so the whole import becomes one commit. */
+    /* The import queues all writes together so it becomes one commit. */
     const keepEq={...((S.cfg.importAras&&S.cfg.importAras.eqMap)||{}),...P.eqMap};
     jobs.push(()=>db.doc('config/importAras').set({map:I.map,eqMap:keepEq,lastFile:I.fileName,date:now,includeClosed:S.incClosed}));
     await Promise.all(jobs.map(j=>j()));
@@ -1538,7 +1538,7 @@ async function smpSaveLot(){
     if(u.removed&&!o.removed) log.push(smpLog('log_rm',c));
     else if(!u.removed&&o.removed) log.push(smpLog('log_back',c));
     else if(u.state!==o.state) log.push(smpLog('log_state',c,{st:o.state},{st:u.state})); }
-  /* Ticked tests of PLRs taken out of the reception are dropped. */
+  /* Removing a PLR from the reception drops its ticked tests. */
   const keep=new Set(S.tests.filter(x=>plrs.includes(smpPlrKey(x.plr))).map(x=>x.id));
   const patch={...fields,plrs,units:e.units.map(({n,state,serial,loc,note,removed,printed})=>({n,state,serial:String(serial||'').trim(),loc:String(loc||'').trim(),note:String(note||'').trim(),removed:!!removed,printed:!!printed})),
     tests:(old.tests||[]).filter(id=>keep.has(id)),log:[...(old.log||[]),...log],updated:nowIso()};
@@ -1836,7 +1836,7 @@ async function fetchRaw(){
   if(!res.ok) throw httpError(res);
   return {data:normData(await res.json()),sha:null,etag:null};
 }
-/* Applies writes to a copy of the data. An update to a document someone else deleted is skipped. */
+/* Applies writes to a copy of the data and skips updates to documents someone else deleted. */
 function applyOps(data,ops){
   for(const o of ops){const c=data[o.col]||(data[o.col]={});
     if(o.op==='set') c[o.id]=clone(o.data);
