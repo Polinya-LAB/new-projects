@@ -51,21 +51,21 @@ window.CE_DEMO=function(){
   const muestras={};
   const L=(id,code,plrs,testIds,desc,pn,phase,k,by,loc,comments,units,project)=>{muestras[id]={code,plrs,tests:testIds,desc,pn,phase,received:ago(k),by,loc,comments,units,
     project:project||tests[testIds[0]].project,log:[{at:at(k),by:'',txt:{k:'log_recv',a:[units.length]}}],created:at(k),updated:at(k)};};
-  L('s57','FLS-00057',['PLR003701'],[t1,t2,t3],'Bomba VS 1 HP · muestra ESL','VS-100 V2.1','ESL',12,'p-marta','Estantería A2','Con hidráulica ESL-2',
+  L('s57','QTS-00057',['PLR003701'],[t1,t2,t3],'Bomba VS 1 HP · muestra ESL','VS-100 V2.1','ESL',12,'p-marta','Estantería A2','Con hidráulica ESL-2',
     [U(1,'testing',{serial:'28825040011',loc:'Banco de bombas'}),U(2,'testing',{serial:'28825040012',loc:'Banco de bombas'}),U(3,'waiting',{serial:'28825040013'}),U(4,'waiting',{serial:'28825040014'})]);
-  L('s58','FLS-00058',['PLR003701','PLR003707'],[t1,t2,t3,t11],'Bomba VS 1,5 HP · muestra ESL','VS-150 V2.1','ESL',5,'p-jordi','Estantería A2','Repite en PLR003707 (assembly test)',
+  L('s58','QTS-00058',['PLR003701','PLR003707'],[t1,t2,t3,t11],'Bomba VS 1,5 HP · muestra ESL','VS-150 V2.1','ESL',5,'p-jordi','Estantería A2','Repite en PLR003707 (assembly test)',
     [U(1,'testing',{serial:'28825040021',loc:'Banco de bombas'}),U(2,'waiting',{serial:'28825040022',printed:false})]);
-  L('s59','FLS-00059',['PLR003702'],[t4],'Válvula multipuerta 2" con embalaje','73950-0203','Pilot',40,'p-laura','Estantería C1','Drop + vibración + drop',
+  L('s59','QTS-00059',['PLR003702'],[t4],'Válvula multipuerta 2" con embalaje','73950-0203','Pilot',40,'p-laura','Estantería C1','Drop + vibración + drop',
     [U(1,'tested'),U(2,'tested'),U(3,'stored',{loc:'Almacén muestras'})]);
-  L('s60','FLS-00060',['PLR003703'],[t5,t6],'Divisor D.200','77812','Feasibility',20,'p-marta','Cámara UV','Las 3 muestras D.75 están pendientes de inyección',
+  L('s60','QTS-00060',['PLR003703'],[t5,t6],'Divisor D.200','77812','Feasibility',20,'p-marta','Cámara UV','Las 3 muestras D.75 están pendientes de inyección',
     [U(1,'testing'),U(2,'testing'),U(3,'testing')]);
-  L('s61','FLS-00061',['PLR003705'],[t9],'Bomba Victoria Plus · producción','38773','Production',30,'p-jordi','Piscina durabilidad','',
+  L('s61','QTS-00061',['PLR003705'],[t9],'Bomba Victoria Plus · producción','38773','Production',30,'p-jordi','Piscina durabilidad','',
     [U(1,'testing',{serial:'01249999901',loc:'Posición 12'}),U(2,'testing',{serial:'01249999902',loc:'Posición 13'}),U(3,'testing',{serial:'01249999903',loc:'Posición 14'}),U(4,'testing',{serial:'01249999904',loc:'Posición 15'})]);
-  L('s62','FLS-00062',['PLR003706'],[t10],'Ducha exterior · cuerpo','77680','ESL',25,'p-laura','Estantería B3','',
+  L('s62','QTS-00062',['PLR003706'],[t10],'Ducha exterior · cuerpo','77680','ESL',25,'p-laura','Estantería B3','',
     [U(1,'tested'),U(2,'tested'),U(3,'returned',{note:'Devuelta a I+D'}),U(4,'received',{removed:true,note:'Llegó rota en el transporte'})]);
-  L('s63','FLS-00063',['FLT-0216'],[],'MAXIM VS-Pump · embalaje','73774 / 73775','Pilot',150,'p-marta','Almacén muestras','Packaging test type F (registro antiguo)',
+  L('s63','QTS-00063',['FLT-0216'],[],'MAXIM VS-Pump · embalaje','73774 / 73775','Pilot',150,'p-marta','Almacén muestras','Packaging test type F (registro antiguo)',
     [U(1,'stored',{serial:'0124000059'}),U(2,'stored',{serial:'0124000060'})],'22105 - MAXIM VS-PUMP');
-  L('s64','FLS-00064',['PLR003708'],[t12],'Bomba filtro compacta','CFP-075','MSL',0,'p-jordi','Recepción','',
+  L('s64','QTS-00064',['PLR003708'],[t12],'Bomba filtro compacta','CFP-075','MSL',0,'p-jordi','Recepción','',
     [U(1,'received',{printed:false}),U(2,'received',{printed:false})]);
   return {tests,personas,bancos,qtps,config:{samples:{seq:64}},muestras};
 };

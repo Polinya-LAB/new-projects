@@ -9,12 +9,12 @@ sus **etiquetas en la DYMO LabelWriter 550**. Tiene el formato de Control de ens
 ## Qué hace
 
 - **Muestras:** una tarjeta por PLR, con sus QTP en orden de ensayo y las muestras recibidas frente a las piezas pedidas
-  (por ejemplo *2 / 6 recibidas*). Tiene además una vista de lista, filtros por estado y fase, y búsqueda por FLS, PLR, QTP o
+  (por ejemplo *2 / 6 recibidas*). Tiene además una vista de lista, filtros por estado y fase, y búsqueda por QTS, PLR, QTP o
   número de serie, con teclado o con un lector de QR o de código de barras.
-- **Numeración:** la app da a cada recepción un número `FLS-xxxxx` correlativo y a cada unidad física su sufijo `-1, -2…`,
+- **Numeración:** la app da a cada recepción un número `QTS-xxxxx` correlativo y a cada unidad física su sufijo `-1, -2…`,
   aunque haya una sola unidad. Una unidad retirada conserva su número y la app no lo reutiliza.
 - **Códigos desde ARAS:** el panel *Códigos por validar* propone los códigos de cada PLR activo con piezas pedidas en ARAS
-  que aún no tienen código. Si las líneas QTP piden las mismas piezas, propone un FLS para el PLR; si piden distintas, uno por
+  que aún no tienen código. Si las líneas QTP piden las mismas piezas, propone un QTS para el PLR; si piden distintas, uno por
   línea. Puedes cambiar el modo y las unidades, y validar (con o sin imprimir etiquetas), validar todos o descartar un PLR.
   Los números se asignan al validar. El botón **Generar códigos** de cada tarjeta repite la propuesta cuando ARAS cambia o
   para un PLR descartado. Tras importar de ARAS, la app avisa de cuántos PLR tienen códigos por validar.
