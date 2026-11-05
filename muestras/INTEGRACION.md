@@ -26,7 +26,7 @@ Desde la raíz de `management-tools`, con esta carpeta (`new-projects/muestras/`
    - `integracion/sw.js` → `muestras/sw.js`
    - `manifest.webmanifest` e `icons/` tal cual
 3. **Versión de los archivos.** En `control-ensayos/index.html` y `ocupacion/index.html` cambia `?v=…` de `app.js` y `app.css`
-   por la misma versión que usa `muestras/index.html` (`20261104`), para que los navegadores carguen el código nuevo.
+   por la misma versión que usa `muestras/index.html` (`20261105`), para que los navegadores carguen el código nuevo.
 4. **Portada.** En el `index.html` raíz añade la tarjeta:
    ```html
    <a class="app" href="muestras/">

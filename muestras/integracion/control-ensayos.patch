@@ -159,7 +159,7 @@ index 084bf03..343d72b 100644
 +.prop .utbl input{max-width:84px}
 +.dlg-body .prop{margin-top:10px}
 diff --git a/control-ensayos/app.js b/control-ensayos/app.js
-index 3ac3c7e..4f5eb12 100644
+index 3ac3c7e..126ae49 100644
 --- a/control-ensayos/app.js
 +++ b/control-ensayos/app.js
 @@ -17,16 +17,17 @@ const UNITS=['Hours','Days','Weeks','Cycles'];
@@ -185,7 +185,7 @@ index 3ac3c7e..4f5eb12 100644
  
  const ARAS_FIELDS=[
    {k:'plr',label:'Request number (PLR)',req:true,syn:['request number','request','plr','request no']},
-@@ -63,7 +64,7 @@ const QTP_FIELDS=[
+@@ -63,10 +64,14 @@ const QTP_FIELDS=[
  ];
  
  /* ---------- State ---------- */
@@ -194,8 +194,19 @@ index 3ac3c7e..4f5eb12 100644
  let db=null, dl=null, IX=null;
  try{const v=localStorage.getItem(VIEW_KEY); if(VIEWS.some(x=>x[0]===v)) S.view=v; S.hideIdle=localStorage.getItem('tl.hideIdle')==='1'; const z=+localStorage.getItem('tl.dayW'); if(z) S.dayW=z===30?32:z; const qs=JSON.parse(localStorage.getItem('tl.qst')||'null'); if(Array.isArray(qs)&&qs.length) S.qst=qs.filter(x=>ACTIVE.includes(x)); if(!localStorage.getItem('tl.qstv')){ if(!S.qst.includes('Not approved')) S.qst.unshift('Not approved'); localStorage.setItem('tl.qstv','2'); } if(localStorage.getItem('tl.qstv')==='2'){ if(!S.qst.includes('Endurance running')) S.qst.push('Endurance running'); localStorage.setItem('tl.qstv','3'); } localStorage.setItem('tl.qst',JSON.stringify(S.qst)); const ow=+localStorage.getItem('tl.occw'); if([2,4,6,8].includes(ow)) S.occ.weeks=ow;}catch(e){}
  if(location.hash&&VIEWS.some(x=>'#'+x[0]===location.hash)) S.view=location.hash.slice(1);
-@@ -309,21 +310,23 @@ function computeAlerts(ix){
++/* The QR of a sample label opens Control de ensayos on the tests of its PLR: #queue?plr=PLR000000. The queue then shows every
++   active status; once the tests load, a PLR whose tests are all closed goes to History. */
++const DEEP=(m=>m&&APP==='tests'?{plr:decodeURIComponent(m[1]).trim().toUpperCase(),done:false}:null)(location.hash.match(/^#queue\?plr=([^&]+)/i));
++if(DEEP){S.view='queue'; S.q=DEEP.plr; S.qst=[...ACTIVE]; try{history.replaceState(null,'',location.pathname+location.search+'#queue');}catch(e){}}
+ 
+ /* ---------- Utilities ---------- */
+ const $=s=>document.querySelector(s);
+@@ -307,23 +312,27 @@ function computeAlerts(ix){
+ 
+ /* ---------- Render ---------- */
  function render(){
++  if(DEEP&&!DEEP.done&&S.loaded.has('tests')){DEEP.done=true; const ts=S.tests.filter(t=>String(t.plr||'').toUpperCase()===DEEP.plr);
++    if(ts.length&&!ts.some(t=>ACTIVE.includes(t.status))){S.view='history'; try{history.replaceState(null,'',location.pathname+location.search+'#history');}catch(e){}}}
    IX=buildIndex(S.tests); const A=computeAlerts(IX); S.A=A;
    $('#qtp-list').innerHTML=[...S.qtps].sort(byName).map(q=>`<option value="${esc(q.code||q.id)}">${esc(q.name||'')}</option>`).join('');
 -  const crit=A.global.filter(a=>a.sev==='crit').length, nq=S.tests.filter(t=>t.status==='Queued').length, nh=S.tests.filter(t=>CLOSED.includes(t.status)).length;
@@ -225,7 +236,7 @@ index 3ac3c7e..4f5eb12 100644
    $('#view').innerHTML=banner+(loading?`<div class="empty"><h3>Loading lab data…</h3></div>`:fn(A));
  }
  function noTests(){
-@@ -403,7 +406,7 @@ function card(t,al){
+@@ -403,7 +412,7 @@ function card(t,al){
      <div class="card-top"><span class="ref">${esc(baseRef(t))}</span>${prioTag(t.priority)}</div>
      ${g?`<div class="tagline">${esc(g)}</div>`:''}
      <h4>${esc(t.title||'(no description)')}</h4>
@@ -234,7 +245,7 @@ index 3ac3c7e..4f5eb12 100644
      <dl class="meta"><div><dt>Equipment</dt><dd>${esc(b?eqName(b):(t.arasEquipment?t.arasEquipment+' (ARAS)':'—'))}</dd></div><div><dt>Technician</dt><dd>${esc(p?p.nombre:'—')}</dd></div>
      <div><dt>Plan</dt><dd>${esc(planText(t))}</dd></div><div><dt>Due</dt><dd>${dueText(t)}</dd></div></dl>
      ${['In progress','Endurance running','Report','On hold'].includes(t.status)?`<div class="prog" title="${+t.progress||0}%"><span style="width:${Math.min(100,+t.progress||0)}%"></span></div>`:''}
-@@ -745,6 +748,7 @@ function importPanelAras(){
+@@ -745,6 +754,7 @@ function importPanelAras(){
    const I=S.imp, P=arasPreview(); I.P=P;
    if(I.done) return `<section class="panel"><div class="panel-h"><h2>Imported</h2><span class="muted">${esc(I.fileName)}</span><span class="sp"></span><button class="btn sm ghost" data-act="cancel-import">Close</button></div>
      <div class="imp-sum"><span class="tag-st new">${I.done.nNew} new</span><span class="tag-st update">${I.done.nUpd} updated</span></div>
@@ -242,7 +253,7 @@ index 3ac3c7e..4f5eb12 100644
      ${I.done.rows.length?`<div class="scroll-x" style="margin-top:8px"><table class="tbl"><thead><tr><th>Result</th><th>PLR · QTP</th><th>Test</th><th>Changes</th></tr></thead><tbody>${I.done.rows.slice(0,250).map(r=>`<tr><td><span class="tag-st ${r.st}">${r.st==='update'?'Updated':r.st==='hist'?'New → History':'New'}</span></td><td class="ref nowrap">${esc(r.ref)}</td><td>${esc(r.title||'')}</td><td><small class="muted">${esc(r.changes||'')}</small></td></tr>`).join('')}</tbody></table></div>`:''}</section>
    ${statusPanel(P)}`;
    const c=k=>P.recs.filter(r=>r._st===k).length, upd=P.recs.filter(r=>r._st==='update'&&!r._quiet).length, stch=P.recs.filter(r=>r._patch&&r._patch.status).length;
-@@ -936,7 +940,8 @@ function openEditor(id){
+@@ -936,7 +946,8 @@ function openEditor(id){
      <div class="span2 note" id="f-hint"></div>
    </fieldset>
    <div id="f-warn"></div>
@@ -252,7 +263,7 @@ index 3ac3c7e..4f5eb12 100644
    dlg.innerHTML=dlgShell(isNew?'New manual test':(fromAras?'ARAS task':'Manual test'),isNew?'New test':`${baseRef(t)} · ${t.title||''}`,body,isNew?'':`<button type="button" class="btn ghost danger" data-act="del">Delete</button>`);
    if(!dlg.open) dlg.showModal(); liveHints();
  }
-@@ -1039,6 +1044,9 @@ const num=v=>v===''||v==null||isNaN(+v)?'':+v;
+@@ -1039,6 +1050,9 @@ const num=v=>v===''||v==null||isNaN(+v)?'':+v;
  function formErr(m){const el=$('#f-err'); el.textContent=m; el.hidden=!m; return null;}
  async function saveDialog(){
    if(dlg.dataset.kind==='gh') return saveGh();
@@ -262,7 +273,7 @@ index 3ac3c7e..4f5eb12 100644
    if(!db||S.ro) return;
    const kind=dlg.dataset.kind, id=dlg.dataset.id, f=readForm(), now=nowIso(), T=iso(todayMs());
    try{
-@@ -1118,6 +1126,685 @@ async function setTech(id,techId){
+@@ -1118,6 +1132,689 @@ async function setTech(id,techId){
    try{await db.doc(`${COL.tests}/${id}`).update({techId,updated:nowIso()}); const p=personById(techId); toast(`${baseRef(t)} → ${p?p.nombre:'Unassigned'}`);}catch(e){toast(errMsg(e)); render();}
  }
  
@@ -327,7 +338,7 @@ index 3ac3c7e..4f5eb12 100644
 +  linked:'Ensayos enlazados', printLot:'Imprimir etiquetas',
 +  log_recv:n=>`Recibida (${n} ud${n===1?'':'s'}.)`, log_state:(c,a,b)=>`${c}: ${a} → ${b}`, log_add:c=>`${c} añadida`, log_rm:c=>`${c} retirada`, log_back:c=>`${c} recuperada`, log_edit:'Datos de la recepción editados', log_print:n=>`${n} etiqueta${n===1?'':'s'} impresa${n===1?'':'s'}`,
 +  lb_eyebrow:'Etiquetas · DYMO LabelWriter 550', lb_title:n=>`Imprimir ${n} etiqueta${n===1?'':'s'}`, lb_units:'Unidades', lb_all:'Todas', lb_noneSel:'Ninguna',
-+  lb_size:'Etiqueta', lb_code:'Código', qr:'QR (abre la muestra en la app)', bar:'Código de barras (Code 128)', noCode:'Sin código',
++  lb_size:'Etiqueta', lb_code:'Código', qr:'QR (abre los ensayos del PLR en Control de ensayos)', bar:'Código de barras (Code 128)', noCode:'Sin código',
 +  lb_show:'Contenido', lb_plr:'PLR · QTP', lb_desc:'Descripción', lb_proj:'Proyecto', lb_phase:'Fase del proyecto', lb_date:'Fecha de recepción',
 +  lb_preview:'Vista previa a tamaño real',
 +  lb_how:'<b>En el cuadro de impresión:</b> impresora <b>DYMO LabelWriter 550</b>, tamaño de papel el de la etiqueta (p. ej. <i>99012 Large Address</i>), márgenes <b>ninguno</b>, escala <b>100 %</b> y sin encabezados ni pies de página. Sale una etiqueta por página.',
@@ -390,7 +401,7 @@ index 3ac3c7e..4f5eb12 100644
 +  linked:'Linked tests', printLot:'Print labels',
 +  log_recv:n=>`Received (${n} unit${n===1?'':'s'})`, log_state:(c,a,b)=>`${c}: ${a} → ${b}`, log_add:c=>`${c} added`, log_rm:c=>`${c} withdrawn`, log_back:c=>`${c} restored`, log_edit:'Reception details edited', log_print:n=>`${n} label${n===1?'':'s'} printed`,
 +  lb_eyebrow:'Labels · DYMO LabelWriter 550', lb_title:n=>`Print ${n} label${n===1?'':'s'}`, lb_units:'Units', lb_all:'All', lb_noneSel:'None',
-+  lb_size:'Label', lb_code:'Code', qr:'QR (opens the sample in the app)', bar:'Barcode (Code 128)', noCode:'No code',
++  lb_size:'Label', lb_code:'Code', qr:'QR (opens the PLR tests in Control de ensayos)', bar:'Barcode (Code 128)', noCode:'No code',
 +  lb_show:'Content', lb_plr:'PLR · QTP', lb_desc:'Description', lb_proj:'Project', lb_phase:'Project phase', lb_date:'Reception date',
 +  lb_preview:'Preview at real size',
 +  lb_how:'<b>In the print dialog:</b> printer <b>DYMO LabelWriter 550</b>, paper size of the label (e.g. <i>99012 Large Address</i>), margins <b>none</b>, scale <b>100%</b> and no headers or footers. One label per page.',
@@ -821,6 +832,10 @@ index 3ac3c7e..4f5eb12 100644
 +  });
 +}
 +const smpUrl=code=>location.href.split('#')[0]+'#m='+code;
++/* The label QR opens Control de ensayos filtered by the sample's PLR (the first one when it has several); an old FLT reference
++   has no tests there, so its QR opens the sample in this app. */
++const CE_URL='https://polinya-lab.github.io/management-tools/control-ensayos/';
++const smpQrUrl=(l,code)=>{const p=(l.plrs||[]).find(x=>!smpLegacy(x)); return p?`${CE_URL}#queue?plr=${encodeURIComponent(p)}`:smpUrl(code);};
 +function smpLabel(k,c){
 +  const x=smpByKey(k); if(!x) return ''; const {l,u}=x, code=smpCode(l,u), sz=SMP_LABELS[c.size]||SMP_LABELS['99012'];
 +  const qtps=smpLotTests(l).map(y=>y.qtp);
@@ -829,7 +844,7 @@ index 3ac3c7e..4f5eb12 100644
 +  /* Code height that fits the text column: the QR takes a square of the label height, the barcode a strip at the bottom. */
 +  const textW=sz.w-4.4-(c.code==='qr'?sz.h-3.2+2:0), fs=Math.min(sz.h*(c.code==='bar'?.13:.16),textW/(code.length*.62)).toFixed(2);
 +  return `<div class="dlbl ${c.code==='bar'?'wbar':''} ${sz.h<=28?'sm':''}" style="width:${sz.w}mm;height:${sz.h}mm;--fs:${fs}mm">
-+    ${c.code==='qr'?`<div class="qr">${smpQr(smpUrl(code))}</div>`:''}
++    ${c.code==='qr'?`<div class="qr">${smpQr(smpQrUrl(l,code))}</div>`:''}
 +    <div class="tx"><b class="id">${esc(code)}</b>${c.plr&&l2?`<span class="l2">${esc(l2)}</span>`:''}${c.desc?`<span class="ds">${esc(l.desc)}</span>`:''}${ft?`<span class="ft">${esc(ft)}</span>`:''}</div>
 +    ${c.code==='bar'?`<svg class="bc" data-bc="${esc(code)}"></svg>`:''}</div>`;
 +}
@@ -948,7 +963,7 @@ index 3ac3c7e..4f5eb12 100644
  /* ---------- Events ---------- */
  function setView(v){S.view=v; S.q=''; try{localStorage.setItem(VIEW_KEY,v)}catch(e){} render(); window.scrollTo(0,0);}
  document.addEventListener('click',ev=>{
-@@ -1200,15 +1887,29 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1); if(VIE
+@@ -1200,15 +1897,29 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1); if(VIE
  /* ---------- Storage: one JSON file in the private data repository Polinya-LAB/lab-data (folder ensayos/) ----------
     Reading ensayos.json needs the key (token) of an account with read access; saving needs write access;
     every save is a commit. The key is shared with the durability pool app (same site, same browser storage). */
@@ -980,7 +995,7 @@ index 3ac3c7e..4f5eb12 100644
  let local=null, flushTimer=null, flushing=null;
  const pendingOps=[], subs=new Map();
  const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
-@@ -1260,12 +1961,12 @@ function emitAll(){ if(!local) return; for(const [col,set] of subs) for(const fn
+@@ -1260,12 +1971,12 @@ function emitAll(){ if(!local) return; for(const [col,set] of subs) for(const fn
  function recompute(){ local=applyOps(clone(remote.data||emptyData()),pendingOps.map(p=>p.op)); emitAll(); }
  function commitMessage(ops){
    const label=o=>{const d={...((remote.data||{})[o.col]||{})[o.id],...(o.data||{})};
@@ -995,7 +1010,7 @@ index 3ac3c7e..4f5eb12 100644
    return `${APP_NAME}: ${ops.length} changes (${Object.entries(n).map(([c,k])=>`${k} ${names[c]||c}`).join(', ')})`;
  }
  async function commitOps(ops){
-@@ -1282,6 +1983,7 @@ async function commitOps(ops){
+@@ -1282,6 +1993,7 @@ async function commitOps(ops){
  /* Writes show up at once on screen and are saved together, one commit per burst of changes. */
  function queueOp(op){
    return new Promise((res,rej)=>{
@@ -1003,7 +1018,7 @@ index 3ac3c7e..4f5eb12 100644
      if(!GH.token||!GH.push||GH.invalid) return rej({code:'not_granted'});
      pendingOps.push({op,res,rej}); recompute();
      clearTimeout(flushTimer); flushTimer=setTimeout(flushOps,700);
-@@ -1308,10 +2010,12 @@ db={doc:docRef,collection:col=>({path:col,doc:id=>docRef(`${col}/${id||rid()}`),
+@@ -1308,10 +2020,12 @@ db={doc:docRef,collection:col=>({path:col,doc:id=>docRef(`${col}/${id||rid()}`),
  
  async function refresh(){
    if(pendingOps.length||flushing) return;
@@ -1017,7 +1032,7 @@ index 3ac3c7e..4f5eb12 100644
    }catch(err){
      if(err.code==='auth'){GH.invalid=true; GH.push=false; S.ro=true; return refresh();}
      if(!local){S.noDb=true; S.privateData=err.code==='private'; render();}
-@@ -1324,7 +2028,7 @@ async function connectGh(t){
+@@ -1324,7 +2038,7 @@ async function connectGh(t){
    if(!u.ok) throw httpError(u); if(!r.ok) throw httpError(r);
    const user=await u.json(), repo=await r.json();
    Object.assign(GH,{token:t,login:user.login,push:!!(repo.permissions&&repo.permissions.push),invalid:false});
@@ -1026,7 +1041,7 @@ index 3ac3c7e..4f5eb12 100644
  }
  function disconnectGh(){Object.assign(GH,{token:'',login:null,push:false,invalid:false}); S.ro=true; try{localStorage.removeItem(TOKEN_KEY);}catch(e){} remote.etag=null; render(); toast('Disconnected from GitHub. This browser no longer has the key.');}
  function renderGh(){
-@@ -1332,6 +2036,8 @@ function renderGh(){
+@@ -1332,6 +2046,8 @@ function renderGh(){
    b.className='gh '+(GH.invalid?'bad':GH.saving?'busy':GH.login&&GH.push?'on':'');
    b.querySelector('span').textContent=GH.invalid?'GitHub key expired':GH.saving?'Saving…':GH.login?GH.login:'Connect GitHub';
    b.title=GH.login?(GH.push?'Connected with write access. Changes are saved as commits.':'Connected, but this account cannot edit the repository.'):'Connect GitHub to create and change tests';
@@ -1035,7 +1050,7 @@ index 3ac3c7e..4f5eb12 100644
  }
  function openGh(){
    dlg.dataset.kind='gh'; dlg.dataset.id='';
-@@ -1352,6 +2058,7 @@ async function saveGh(){
+@@ -1352,6 +2068,7 @@ async function saveGh(){
    const btn=dlg.querySelector('button[type="submit"]'); btn.disabled=true; btn.textContent='Checking…';
    try{
      await connectGh(t); try{localStorage.setItem(TOKEN_KEY,t);}catch(e){}
@@ -1043,7 +1058,7 @@ index 3ac3c7e..4f5eb12 100644
      remote.etag=null; await refresh(); dlg.close(); render(); loadCal();
      toast(GH.push?`Connected as ${GH.login}. You can now edit.`:`Connected as ${GH.login}, but this account cannot edit the repository.`);
    }catch(err){ btn.disabled=false; btn.textContent='Connect'; formErr(err.code==='auth'?'That key is not valid or has expired.':err.code==='forbidden'?'That key cannot see the repository.':'Could not reach GitHub. Check your connection.'); }
-@@ -1365,9 +2072,9 @@ render();
+@@ -1365,9 +2082,9 @@ render();
  (async()=>{
    let pending=false; const later=()=>{ if(pending) return; pending=true; requestAnimationFrame(()=>{pending=false; render(); if(dlg.open) liveHints();}); };
    const sub=(col,key)=>db.collection(col).onSnapshot(snap=>{S[key]=snap.docs.map(x=>({id:x.id,...x.data()})); S.loaded.add(key); later();});

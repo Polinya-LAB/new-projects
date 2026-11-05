@@ -23,8 +23,8 @@ sus **etiquetas en la DYMO LabelWriter 550**. Tiene el formato de Control de ens
 - **Dos columnas:** estado de la muestra (*Pendiente de recibir, Recibida, En espera, En ensayo, Ensayada, Almacenada, Devuelta, Desechada*) y
   fase del proyecto (*Feasibility, MSL, ESL, Pilot, Production, N/A*).
 - **Varios PLR:** puedes enlazar a más de un PLR una muestra que repite ensayo. La app acepta los números antiguos `FLT-xxxx`.
-- **Etiquetas DYMO:** tamaños 99012 (89 × 36 mm), 99010 (89 × 28 mm), 11354 (57 × 32 mm) y 11352 (54 × 25 mm), con QR que abre la muestra en
-  la app, código de barras Code 128 o sin código. Las imprimes desde el navegador, sin instalar nada más.
+- **Etiquetas DYMO:** tamaños 99012 (89 × 36 mm), 99010 (89 × 28 mm), 11354 (57 × 32 mm) y 11352 (54 × 25 mm), con QR que abre
+  Control de ensayos filtrado por el PLR de la muestra, código de barras Code 128 o sin código. Las imprimes desde el navegador, sin instalar nada más.
 - **Import ARAS:** la misma importación que Control de ensayos (búsqueda `a_Lab_Dashboard` exportada a Excel).
 - **Idioma:** castellano, con botón ES / EN.
 
