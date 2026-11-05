@@ -159,7 +159,7 @@ index 084bf03..343d72b 100644
 +.prop .utbl input{max-width:84px}
 +.dlg-body .prop{margin-top:10px}
 diff --git a/control-ensayos/app.js b/control-ensayos/app.js
-index 3ac3c7e..bd28908 100644
+index 3ac3c7e..4d39132 100644
 --- a/control-ensayos/app.js
 +++ b/control-ensayos/app.js
 @@ -17,16 +17,19 @@ const UNITS=['Hours','Days','Weeks','Cycles'];
@@ -1155,7 +1155,7 @@ index 3ac3c7e..bd28908 100644
      finally{flushing=null; GH.saving=!!pendingOps.length; recompute(); renderGh();}
    })();
    return flushing;
-@@ -1308,50 +2084,146 @@ db={doc:docRef,collection:col=>({path:col,doc:id=>docRef(`${col}/${id||rid()}`),
+@@ -1308,50 +2084,156 @@ db={doc:docRef,collection:col=>({path:col,doc:id=>docRef(`${col}/${id||rid()}`),
  
  async function refresh(){
    if(pendingOps.length||flushing) return;
@@ -1213,11 +1213,21 @@ index 3ac3c7e..bd28908 100644
 +  mailBusy=true; try{await LA.salir();}catch(e){} mailBusy=false;
 +  Object.assign(GH,{modo:null,email:'',login:null,push:false,pushEnsayos:false,noAccess:false,expired:false}); S.ro=true; remote.etag=null;
 +  if(GH.token){GH.modo='clave'; try{await connectGh(GH.token);}catch(err){ if(err.code==='auth') GH.invalid=true; } await refresh();}
-+  else{ /* No key left: the private data leaves memory and screen, so the next person on this browser does not see it. */
-+    clearTimeout(flushTimer); pendingOps.splice(0).forEach(b=>b.rej({code:'auth'}));
-+    remote.data=null; remote.sha=null; remote.etag=null; local=null; CAL.eq=null; CAL.err=null;
-+    Object.assign(S,{tests:[],people:[],equipment:[],qtps:[],samples:[],cfg:{},loaded:new Set(),noDb:true,privateData:true}); }
++  else forgetPrivate(); /* No key left: the private data leaves memory and screen, so the next person on this browser does not see it. */
 +  render(); toast(ta('au_out'));
++}
++function forgetPrivate(){
++  clearTimeout(flushTimer); pendingOps.splice(0).forEach(b=>b.rej({code:'auth'}));
++  remote.data=null; remote.sha=null; remote.etag=null; local=null; CAL.eq=null; CAL.err=null;
++  Object.assign(S,{tests:[],people:[],equipment:[],qtps:[],samples:[],cfg:{},loaded:new Set(),noDb:true,privateData:true});
++}
++/* Someone else signed in on another tab (or the same person again after the session expired here): the tab follows the
++   session, so name, role and data match it. What the previous person had on screen leaves memory first. */
++async function mailSwitch(email){
++  if(email!==GH.email) forgetPrivate();
++  Object.assign(GH,{modo:'correo',email,login:null,push:false,pushEnsayos:false,noAccess:false,expired:false}); S.ro=true; render();
++  try{await connectMail(email);}catch(err){ if(err.code==='auth') mailExpired(); }
++  remote.etag=null; await refresh(); render(); loadCal();
 +}
 +function disconnectGh(){Object.assign(GH,{token:'',login:null,push:false,invalid:false,modo:null}); S.ro=true; try{localStorage.removeItem(TOKEN_KEY);}catch(e){} remote.etag=null; render(); toast('Disconnected from GitHub. This browser no longer has the key.');}
  function renderGh(){
@@ -1313,7 +1323,7 @@ index 3ac3c7e..bd28908 100644
      remote.etag=null; await refresh(); dlg.close(); render(); loadCal();
      toast(GH.push?`Connected as ${GH.login}. You can now edit.`:`Connected as ${GH.login}, but this account cannot edit the repository.`);
    }catch(err){ btn.disabled=false; btn.textContent='Connect'; formErr(err.code==='auth'?'That key is not valid or has expired.':err.code==='forbidden'?'That key cannot see the repository.':'Could not reach GitHub. Check your connection.'); }
-@@ -1365,9 +2237,15 @@ render();
+@@ -1365,9 +2247,18 @@ render();
  (async()=>{
    let pending=false; const later=()=>{ if(pending) return; pending=true; requestAnimationFrame(()=>{pending=false; render(); if(dlg.open) liveHints();}); };
    const sub=(col,key)=>db.collection(col).onSnapshot(snap=>{S[key]=snap.docs.map(x=>({id:x.id,...x.data()})); S.loaded.add(key); later();});
@@ -1325,8 +1335,11 @@ index 3ac3c7e..bd28908 100644
 -  let tick=0; setInterval(()=>{ if(document.hidden) return; refresh(); if(++tick%10===0&&GH.token) loadCal(); }, GH.token?30000:60000);
 +  if(LA&&!(PREVIEW&&DEMO)){ await LA.listo; const s=await LA.sesion();
 +    if(s){ GH.modo='correo'; GH.email=s.email; try{await connectMail(s.email);}catch(err){ if(err.code==='auth') mailExpired(); } }
-+    /* Signed out in another tab, or the session could not be renewed: same as a 401. */
-+    LA.onCambio(x=>{ if(!x&&byMail()&&!mailBusy&&!GH.expired){mailExpired(); render();} }); }
++    /* Signed out in another tab, or the session could not be renewed: same as a 401. Signed in as someone else in another
++       tab: reconnect with that session. */
++    LA.onCambio(x=>{ if(mailBusy||!byMail()) return;
++      if(!x){ if(!GH.expired){mailExpired(); render();} }
++      else if(x.email!==GH.email||GH.expired) mailSwitch(x.email); }); }
 +  if(GH.modo==='clave'&&GH.token&&!(PREVIEW&&DEMO)){ try{await connectGh(GH.token);}catch(err){ if(err.code==='auth') GH.invalid=true; } }
 +  await refresh(); render(); smpFromHash(); loadCal();
 +  /* Polling: 30 s with a GitHub key, 60 s with an email session (free plan limits), only while the tab is visible. */
