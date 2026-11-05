@@ -1,5 +1,9 @@
 # Integrar Muestras en management-tools
 
+> **Estado:** Muestras ya está integrada en management-tools (`muestras/`, 29/10). Esta guía queda como referencia del
+> proceso; los archivos de `integracion/` se actualizaron el 5/11 con la versión de management-tools, que incluye el
+> acceso por correo (`acceso/config.js` y `acceso/lab-auth.js`, versión `20261106`).
+
 Muestras entra en el portal como **otra aplicación**, igual que Ocupación: su propia página `muestras/`, con el
 código compartido de Control de ensayos (`control-ensayos/app.js` y `app.css`) y los mismos datos (`ensayos/ensayos.json`
 en `lab-data`, colección nueva `muestras`). Control de ensayos mantiene sus pestañas: muestra en el tablero el chip
@@ -19,14 +23,15 @@ Desde la raíz de `management-tools`, con esta carpeta (`new-projects/muestras/`
    git apply -p1 ../new-projects/muestras/integracion/control-ensayos.patch
    ```
    El parche deja `PREVIEW=false`: la app guarda en GitHub como las demás y no ofrece datos de ejemplo.
-   Parte del commit `338446a` de management-tools. Si `app.js` cambió después y el parche no aplica, rehazlo: es la
+   Parte del commit `338446a` de management-tools. Desde el 5/11 es la diferencia entre ese commit y el `app.js` y `app.css`
+   actuales de `control-ensayos/`, e incluye los cambios del acceso por correo. Si `app.js` cambió después y el parche no aplica, rehazlo: es la
    diferencia entre `control-ensayos/app.js` y `muestras/app.js` (con `PREVIEW=false`), y lo mismo para `app.css`.
 2. **Página de la app.** Crea `muestras/` con:
    - `integracion/index.html` → `muestras/index.html` (apunta a `../control-ensayos/app.js` y `app.css`, sin datos de ejemplo)
    - `integracion/sw.js` → `muestras/sw.js`
    - `manifest.webmanifest` e `icons/` tal cual
 3. **Versión de los archivos.** En `control-ensayos/index.html` y `ocupacion/index.html` cambia `?v=…` de `app.js` y `app.css`
-   por la misma versión que usa `muestras/index.html` (`20261105`), para que los navegadores carguen el código nuevo.
+   por la misma versión que usa `muestras/index.html` (`20261106`), para que los navegadores carguen el código nuevo.
 4. **Portada.** En el `index.html` raíz añade la tarjeta:
    ```html
    <a class="app" href="muestras/">
