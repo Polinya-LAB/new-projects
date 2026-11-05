@@ -1,5 +1,5 @@
 diff --git a/control-ensayos/app.css b/control-ensayos/app.css
-index 084bf03..343d72b 100644
+index 084bf03..79f2a83 100644
 --- a/control-ensayos/app.css
 +++ b/control-ensayos/app.css
 @@ -3,7 +3,7 @@
@@ -126,14 +126,14 @@ index 084bf03..343d72b 100644
 +.lb-list label{display:flex;gap:8px;align-items:center;font-size:13px;font-family:var(--f-mono)}
 +.lb-prev{display:flex;flex-wrap:wrap;gap:10px;align-content:start;background:var(--surface-2);padding:12px;border-radius:var(--r);overflow:auto;max-height:440px}
 +.dlbl{flex:none;background:#fff;color:#000;display:flex;gap:2mm;padding:1.6mm 2.2mm;box-sizing:border-box;overflow:hidden;font-family:var(--f-body);border-radius:2.5mm;box-shadow:0 1px 3px rgba(0,0,0,.25)}
-+.dlbl .qr{flex:none;height:100%;aspect-ratio:1/1}
++.dlbl .qr{flex:none;width:var(--qr,26mm);height:var(--qr,26mm);align-self:center}
 +.dlbl .qr svg{width:100%;height:100%;display:block}
 +.dlbl .tx{display:flex;flex-direction:column;justify-content:center;gap:.5mm;min-width:0;flex:1;line-height:1.12}
 +/* --fs (set per label size) = height of the sample code; the other lines scale from it */
 +.dlbl .id{font-family:var(--f-mono);font-weight:700;font-size:var(--fs,4.4mm);letter-spacing:-.02em;white-space:nowrap}
-+.dlbl .l2{font-family:var(--f-mono);font-size:calc(var(--fs,4.4mm)*.58);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-+.dlbl .ds{font-size:calc(var(--fs,4.4mm)*.66);font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-+.dlbl .ft{font-size:calc(var(--fs,4.4mm)*.54);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
++.dlbl .l2{font-family:var(--f-mono);font-size:var(--fs-l2,2.6mm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
++.dlbl .ds{font-size:var(--fs-ds,3mm);font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
++.dlbl .ft{font-size:var(--fs-ft,2.4mm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 +.dlbl.sm .ds{-webkit-line-clamp:1}
 +.dlbl.wbar{flex-direction:column;gap:.8mm}
 +.dlbl.wbar .tx{flex:1 1 auto;justify-content:flex-start}
@@ -159,7 +159,7 @@ index 084bf03..343d72b 100644
 +.prop .utbl input{max-width:84px}
 +.dlg-body .prop{margin-top:10px}
 diff --git a/control-ensayos/app.js b/control-ensayos/app.js
-index 3ac3c7e..571c48d 100644
+index 3ac3c7e..9b44aec 100644
 --- a/control-ensayos/app.js
 +++ b/control-ensayos/app.js
 @@ -17,16 +17,19 @@ const UNITS=['Hours','Days','Weeks','Cycles'];
@@ -295,7 +295,7 @@ index 3ac3c7e..571c48d 100644
    if(!db||S.ro) return;
    const kind=dlg.dataset.kind, id=dlg.dataset.id, f=readForm(), now=nowIso(), T=iso(todayMs());
    try{
-@@ -1118,6 +1143,717 @@ async function setTech(id,techId){
+@@ -1118,6 +1143,719 @@ async function setTech(id,techId){
    try{await db.doc(`${COL.tests}/${id}`).update({techId,updated:nowIso()}); const p=personById(techId); toast(`${baseRef(t)} → ${p?p.nombre:'Unassigned'}`);}catch(e){toast(errMsg(e)); render();}
  }
  
@@ -309,11 +309,13 @@ index 3ac3c7e..571c48d 100644
 +const SMP_CLS={expected:'exp',received:'plan',waiting:'cola',testing:'curso',tested:'inf',stored:'cerr',returned:'endu',scrapped:'canc'};
 +const SMP_DEFAULT=['expected','received','waiting','testing','tested','stored'];
 +const SMP_PHASES=['Feasibility','MSL','ESL','Pilot','Production','N/A'];
++/* Sizes in mm per label: qr = side of the QR; id, l2 (PLR · QTP), ds (description) and ft (footer) = font sizes.
++   The QR stays readable (about 0.4 mm per module at 17 mm) and leaves at least 30 mm of width for the text. */
 +const SMP_LABELS={
-+  '99012':{w:89,h:36,n:'99012 Large Address · 89 × 36 mm'},
-+  '99010':{w:89,h:28,n:'99010 Standard Address · 89 × 28 mm'},
-+  '11354':{w:57,h:32,n:'11354 Multi-purpose · 57 × 32 mm'},
-+  '11352':{w:54,h:25,n:'11352 Return Address · 54 × 25 mm'}};
++  '99012':{w:89,h:36,n:'99012 Large Address · 89 × 36 mm',qr:28,id:5.6,l2:3.2,ds:3.6,ft:2.9},
++  '99010':{w:89,h:28,n:'99010 Standard Address · 89 × 28 mm',qr:22,id:5,l2:2.9,ds:3.2,ft:2.6},
++  '11354':{w:57,h:32,n:'11354 Multi-purpose · 57 × 32 mm',qr:19,id:4.2,l2:2.3,ds:3,ft:2.4},
++  '11352':{w:54,h:25,n:'11352 Return Address · 54 × 25 mm',qr:17,id:3.9,l2:2.2,ds:2.7,ft:2.2}};
 +const SMP_CODE_RE=/QTS-\d{5}(?:-\d+)?/i;
 +const SMP_I18N={
 +es:{
@@ -891,9 +893,9 @@ index 3ac3c7e..571c48d 100644
 +  const qtps=smpLotTests(l).map(y=>y.qtp);
 +  const l2=[(l.plrs||[]).join(' · '),qtps.length?qtps[0]+(qtps.length>1?` +${qtps.length-1}`:''):''].filter(Boolean).join(' · ');
 +  const ft=[c.proj&&projectNo(l),c.phase&&l.phase,c.date&&l.received&&fmt(l.received)].filter(Boolean).join(' · ');
-+  /* Code height that fits the text column: the QR takes a square of the label height, the barcode a strip at the bottom. */
-+  const textW=sz.w-4.4-(c.code==='qr'?sz.h-3.2+2:0), fs=Math.min(sz.h*(c.code==='bar'?.13:.16),textW/(code.length*.62)).toFixed(2);
-+  return `<div class="dlbl ${c.code==='bar'?'wbar':''} ${sz.h<=28?'sm':''}" style="width:${sz.w}mm;height:${sz.h}mm;--fs:${fs}mm">
++  /* The code shrinks only if it would not fit the text column next to the QR (the barcode takes a strip at the bottom instead). */
++  const textW=sz.w-4.4-(c.code==='qr'?sz.qr+2:0), kfit=Math.min(1,textW/(code.length*.62)/sz.id), f=v=>(v*kfit).toFixed(2)+'mm';
++  return `<div class="dlbl ${c.code==='bar'?'wbar':''} ${sz.h<=28?'sm':''}" style="width:${sz.w}mm;height:${sz.h}mm;--qr:${sz.qr}mm;--fs:${f(sz.id)};--fs-l2:${f(sz.l2)};--fs-ds:${f(sz.ds)};--fs-ft:${f(sz.ft)}">
 +    ${c.code==='qr'?`<div class="qr">${smpQr(smpQrUrl(l,code))}</div>`:''}
 +    <div class="tx"><b class="id">${esc(code)}</b>${c.plr&&l2?`<span class="l2">${esc(l2)}</span>`:''}${c.desc?`<span class="ds">${esc(l.desc)}</span>`:''}${ft?`<span class="ft">${esc(ft)}</span>`:''}</div>
 +    ${c.code==='bar'?`<svg class="bc" data-bc="${esc(code)}"></svg>`:''}</div>`;
@@ -1013,7 +1015,7 @@ index 3ac3c7e..571c48d 100644
  /* ---------- Events ---------- */
  function setView(v){S.view=v; S.q=''; try{localStorage.setItem(VIEW_KEY,v)}catch(e){} render(); window.scrollTo(0,0);}
  document.addEventListener('click',ev=>{
-@@ -1143,6 +1879,8 @@ document.addEventListener('click',ev=>{
+@@ -1143,6 +1881,8 @@ document.addEventListener('click',ev=>{
    else if(a==='export') exportXlsx();
    else if(a==='gh') openGh();
    else if(a==='gh-off'){disconnectGh(); dlg.close();}
@@ -1022,7 +1024,7 @@ index 3ac3c7e..571c48d 100644
    else if(a==='sort'){const st=S.sort[t.dataset.table]; if(st.k===t.dataset.k) st.dir=-st.dir; else {st.k=t.dataset.k; st.dir=1;} render();}
    else if(a==='qst'){const s=t.dataset.s; S.qst=S.qst.includes(s)?S.qst.filter(x=>x!==s):[...S.qst,s]; try{localStorage.setItem('tl.qst',JSON.stringify(S.qst))}catch(e){} render();}
    else if(a==='occ-nav'){const dd=+t.dataset.d; S.occ.start=dd===0?mondayOf(todayMs()):(S.occ.start??mondayOf(todayMs()))+dd*7*DAY; render();}
-@@ -1200,43 +1938,75 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1); if(VIE
+@@ -1200,43 +1940,75 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1); if(VIE
  /* ---------- Storage: one JSON file in the private data repository Polinya-LAB/lab-data (folder ensayos/) ----------
     Reading ensayos.json needs the key (token) of an account with read access; saving needs write access;
     every save is a commit. The key is shared with the durability pool app (same site, same browser storage). */
@@ -1108,7 +1110,7 @@ index 3ac3c7e..571c48d 100644
      CAL.eq=JSON.parse(text).equipment||{}; CAL.err=null;
    }catch(err){CAL.err=err.code||'unavailable';}
    render();
-@@ -1260,19 +2030,21 @@ function emitAll(){ if(!local) return; for(const [col,set] of subs) for(const fn
+@@ -1260,19 +2032,21 @@ function emitAll(){ if(!local) return; for(const [col,set] of subs) for(const fn
  function recompute(){ local=applyOps(clone(remote.data||emptyData()),pendingOps.map(p=>p.op)); emitAll(); }
  function commitMessage(ops){
    const label=o=>{const d={...((remote.data||{})[o.col]||{})[o.id],...(o.data||{})};
@@ -1133,7 +1135,7 @@ index 3ac3c7e..571c48d 100644
      if(res.ok){const j=await res.json(); Object.assign(remote,{data:next,sha:j.content.sha,etag:null}); return;}
      if(res.status!==409&&res.status!==422) throw httpError(res);
      await new Promise(r=>setTimeout(r,500+Math.random()*800));
-@@ -1282,7 +2054,8 @@ async function commitOps(ops){
+@@ -1282,7 +2056,8 @@ async function commitOps(ops){
  /* Writes show up at once on screen and are saved together, one commit per burst of changes. */
  function queueOp(op){
    return new Promise((res,rej)=>{
@@ -1143,7 +1145,7 @@ index 3ac3c7e..571c48d 100644
      pendingOps.push({op,res,rej}); recompute();
      clearTimeout(flushTimer); flushTimer=setTimeout(flushOps,700);
    });
-@@ -1294,7 +2067,7 @@ async function flushOps(){
+@@ -1294,7 +2069,7 @@ async function flushOps(){
    GH.saving=true; renderGh();
    flushing=(async()=>{
      try{await commitOps(batch.map(b=>b.op)); batch.forEach(b=>b.res());}
@@ -1152,7 +1154,7 @@ index 3ac3c7e..571c48d 100644
      finally{flushing=null; GH.saving=!!pendingOps.length; recompute(); renderGh();}
    })();
    return flushing;
-@@ -1308,50 +2081,156 @@ db={doc:docRef,collection:col=>({path:col,doc:id=>docRef(`${col}/${id||rid()}`),
+@@ -1308,50 +2083,156 @@ db={doc:docRef,collection:col=>({path:col,doc:id=>docRef(`${col}/${id||rid()}`),
  
  async function refresh(){
    if(pendingOps.length||flushing) return;
@@ -1320,7 +1322,7 @@ index 3ac3c7e..571c48d 100644
      remote.etag=null; await refresh(); dlg.close(); render(); loadCal();
      toast(GH.push?`Connected as ${GH.login}. You can now edit.`:`Connected as ${GH.login}, but this account cannot edit the repository.`);
    }catch(err){ btn.disabled=false; btn.textContent='Connect'; formErr(err.code==='auth'?'That key is not valid or has expired.':err.code==='forbidden'?'That key cannot see the repository.':'Could not reach GitHub. Check your connection.'); }
-@@ -1365,9 +2244,18 @@ render();
+@@ -1365,9 +2246,18 @@ render();
  (async()=>{
    let pending=false; const later=()=>{ if(pending) return; pending=true; requestAnimationFrame(()=>{pending=false; render(); if(dlg.open) liveHints();}); };
    const sub=(col,key)=>db.collection(col).onSnapshot(snap=>{S[key]=snap.docs.map(x=>({id:x.id,...x.data()})); S.loaded.add(key); later();});
