@@ -1,5 +1,5 @@
 diff --git a/control-ensayos/app.css b/control-ensayos/app.css
-index 084bf03..19ae957 100644
+index 084bf03..2f291e4 100644
 --- a/control-ensayos/app.css
 +++ b/control-ensayos/app.css
 @@ -3,7 +3,7 @@
@@ -36,7 +36,7 @@ index 084bf03..19ae957 100644
  .pill.est{color:var(--st)}
  .prio{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:3px;background:var(--surface-2);color:var(--muted)}
  .prio.Urgent{background:var(--crit);color:#fff} .prio.High{background:var(--crit-soft);color:var(--crit)} .prio.Medium{background:var(--accent-soft);color:var(--accent)}
-@@ -316,3 +316,140 @@ img{max-width:100%}
+@@ -316,3 +316,139 @@ img{max-width:100%}
  .gh.on i{background:var(--ok)} .gh.bad i{background:var(--crit)} .gh.busy i{background:var(--warn)}
  .gh.on{color:var(--fg)}
  .steps-plain{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px}
@@ -69,7 +69,6 @@ index 084bf03..19ae957 100644
 +.imp-jobs li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;border:1px solid var(--line);border-radius:var(--r);padding:6px 10px}
 +.imp-jobs time{color:var(--muted);font-variant-numeric:tabular-nums}.imp-jobs .cods{font-family:var(--f-mono)}
 +.imp-jobs .imp-tag{font-weight:600}.imp-impreso .imp-tag{color:var(--ok,#1a7f4b)}.imp-error .imp-tag,.imp-msg{color:var(--crit,#b42318)}
-+.dlbl-img{display:block;flex:none;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);image-rendering:pixelated}
 +.lt-plr{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;margin-bottom:8px;display:grid;gap:6px}
 +.lt-add input{flex:1;min-width:140px;max-width:260px}
 +.as-list{display:grid;gap:6px;max-height:50vh;overflow:auto}
@@ -178,7 +177,7 @@ index 084bf03..19ae957 100644
 +.prop .utbl input{max-width:84px}
 +.dlg-body .prop{margin-top:10px}
 diff --git a/control-ensayos/app.js b/control-ensayos/app.js
-index 3ac3c7e..51ec65c 100644
+index 3ac3c7e..61b51ba 100644
 --- a/control-ensayos/app.js
 +++ b/control-ensayos/app.js
 @@ -14,59 +14,64 @@ const PRIO_RANK={Urgent:0,High:1,Medium:2,Low:3};
@@ -1359,7 +1358,7 @@ index 3ac3c7e..51ec65c 100644
  }
  
  async function setDate(id,field,value){
-@@ -1099,25 +1137,1341 @@ async function setDate(id,field,value){
+@@ -1099,25 +1137,1334 @@ async function setDate(id,field,value){
    const patch={updated:nowIso()}; let msg='';
    if(field==='start'){
      if((t.start||'')===value) return;
@@ -2432,13 +2431,6 @@ index 3ac3c7e..51ec65c 100644
 +  const h=dlg.querySelector('.dlg-h h2'); if(h) h.textContent=tx('lb_title',keys.length);
 +  const how=dlg.querySelector('.lb-how'); if(how) how.innerHTML=lab?esc(tx('imp_how')):tx('lb_how');
 +  let j=$('#imp-jobs'); if(lab&&!j){j=document.createElement('div'); j.id='imp-jobs'; p.parentElement.appendChild(j);} if(j){j.hidden=!lab; if(lab) j.innerHTML=impJobsHtml();}
-+  /* The lab printer prints the 1-bit image: the preview shows that image (what you see is what prints). */
-+  if(lab&&keys.length){const seq=++IMP.prev, slice=keys.slice(0,12);
-+    Promise.all(slice.map(k=>impLabelPng(k,c))).then(pngs=>{ if(seq!==IMP.prev||!p.isConnected) return;
-+      const sz=SMP_LABELS[c.size]||SMP_LABELS['99012'];
-+      p.querySelectorAll('.dlbl').forEach((el,i)=>{ if(i<pngs.length) el.outerHTML=`<img class="dlbl-img" alt="" src="data:image/png;base64,${pngs[i]}" style="width:${sz.w}mm;height:${sz.h}mm">`; });
-+    }).catch(e=>{ if(seq===IMP.prev&&e.code==='render') toast(tx('imp_e_render')); });
-+  }
 +}
 +function smpLbSet(k,v){const c=smpLblCfg(); c[k]=v; try{localStorage.setItem('tl.lbl',JSON.stringify(c));}catch(e){} smpLbPreview();}
 +function smpPrint(){
@@ -2708,7 +2700,7 @@ index 3ac3c7e..51ec65c 100644
  /* ---------- Events ---------- */
  function setView(v){S.view=v; S.q=''; try{localStorage.setItem(VIEW_KEY,v)}catch(e){} render(); window.scrollTo(0,0);}
  document.addEventListener('click',ev=>{
-@@ -1143,6 +2497,8 @@ document.addEventListener('click',ev=>{
+@@ -1143,6 +2490,8 @@ document.addEventListener('click',ev=>{
    else if(a==='export') exportXlsx();
    else if(a==='gh') openGh();
    else if(a==='gh-off'){disconnectGh(); dlg.close();}
@@ -2717,7 +2709,7 @@ index 3ac3c7e..51ec65c 100644
    else if(a==='sort'){const st=S.sort[t.dataset.table]; if(st.k===t.dataset.k) st.dir=-st.dir; else {st.k=t.dataset.k; st.dir=1;} render();}
    else if(a==='qst'){const s=t.dataset.s; S.qst=S.qst.includes(s)?S.qst.filter(x=>x!==s):[...S.qst,s]; try{localStorage.setItem('tl.qst',JSON.stringify(S.qst))}catch(e){} render();}
    else if(a==='occ-nav'){const dd=+t.dataset.d; S.occ.start=dd===0?mondayOf(todayMs()):(S.occ.start??mondayOf(todayMs()))+dd*7*DAY; render();}
-@@ -1178,7 +2534,7 @@ document.addEventListener('change',ev=>{
+@@ -1178,7 +2527,7 @@ document.addEventListener('change',ev=>{
  });
  document.addEventListener('submit',ev=>{ if(ev.target.id!=='dlg-form') return; ev.preventDefault();
    const b=ev.target.querySelector('button[type="submit"]'), label=b&&b.textContent; if(b&&b.disabled) return;
@@ -2726,7 +2718,7 @@ index 3ac3c7e..51ec65c 100644
    Promise.resolve(saveDialog()).finally(()=>{ if(b&&dlg.open&&dlg.dataset.kind!=='gh'){b.disabled=false; b.textContent=label;} }); });
  /* file drag and drop */
  const dzOf=ev=>ev.target.closest&&ev.target.closest('[data-dz]');
-@@ -1200,43 +2556,75 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1); if(VIE
+@@ -1200,43 +2549,75 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1); if(VIE
  /* ---------- Storage: one JSON file in the private data repository Polinya-LAB/lab-data (folder ensayos/) ----------
     Reading ensayos.json needs the key (token) of an account with read access; saving needs write access;
     every save is a commit. The key is shared with the durability pool app (same site, same browser storage). */
@@ -2812,7 +2804,7 @@ index 3ac3c7e..51ec65c 100644
      CAL.eq=JSON.parse(text).equipment||{}; CAL.err=null;
    }catch(err){CAL.err=err.code||'unavailable';}
    render();
-@@ -1260,19 +2648,21 @@ function emitAll(){ if(!local) return; for(const [col,set] of subs) for(const fn
+@@ -1260,19 +2641,21 @@ function emitAll(){ if(!local) return; for(const [col,set] of subs) for(const fn
  function recompute(){ local=applyOps(clone(remote.data||emptyData()),pendingOps.map(p=>p.op)); emitAll(); }
  function commitMessage(ops){
    const label=o=>{const d={...((remote.data||{})[o.col]||{})[o.id],...(o.data||{})};
@@ -2837,7 +2829,7 @@ index 3ac3c7e..51ec65c 100644
      if(res.ok){const j=await res.json(); Object.assign(remote,{data:next,sha:j.content.sha,etag:null}); return;}
      if(res.status!==409&&res.status!==422) throw httpError(res);
      await new Promise(r=>setTimeout(r,500+Math.random()*800));
-@@ -1282,7 +2672,8 @@ async function commitOps(ops){
+@@ -1282,7 +2665,8 @@ async function commitOps(ops){
  /* Writes show up at once on screen and are saved together, one commit per burst of changes. */
  function queueOp(op){
    return new Promise((res,rej)=>{
@@ -2847,7 +2839,7 @@ index 3ac3c7e..51ec65c 100644
      pendingOps.push({op,res,rej}); recompute();
      clearTimeout(flushTimer); flushTimer=setTimeout(flushOps,700);
    });
-@@ -1294,7 +2685,7 @@ async function flushOps(){
+@@ -1294,7 +2678,7 @@ async function flushOps(){
    GH.saving=true; renderGh();
    flushing=(async()=>{
      try{await commitOps(batch.map(b=>b.op)); batch.forEach(b=>b.res());}
@@ -2856,7 +2848,7 @@ index 3ac3c7e..51ec65c 100644
      finally{flushing=null; GH.saving=!!pendingOps.length; recompute(); renderGh();}
    })();
    return flushing;
-@@ -1308,66 +2699,202 @@ db={doc:docRef,collection:col=>({path:col,doc:id=>docRef(`${col}/${id||rid()}`),
+@@ -1308,66 +2692,202 @@ db={doc:docRef,collection:col=>({path:col,doc:id=>docRef(`${col}/${id||rid()}`),
  
  async function refresh(){
    if(pendingOps.length||flushing) return;

@@ -2,7 +2,7 @@
 
 > **Estado:** Muestras ya está integrada en management-tools (`muestras/`, 29/10). Esta guía queda como referencia del
 > proceso; los archivos de `integracion/` se actualizaron el 5/11 con la versión de management-tools, que incluye el
-> acceso por correo (`acceso/config.js` y `acceso/lab-auth.js`, versión `20261119`, con entrada por correo y contraseña).
+> acceso por correo (`acceso/config.js` y `acceso/lab-auth.js`, versión `20261120`, con entrada por correo y contraseña).
 
 Muestras entra en el portal como **otra aplicación**, igual que Ocupación: su propia página `muestras/`, con el
 código compartido de Control de ensayos (`control-ensayos/app.js` y `app.css`) y los mismos datos (`ensayos/ensayos.json`
@@ -31,7 +31,7 @@ Desde la raíz de `management-tools`, con esta carpeta (`new-projects/muestras/`
    - `integracion/sw.js` → `muestras/sw.js`
    - `manifest.webmanifest` e `icons/` tal cual
 3. **Versión de los archivos.** En `control-ensayos/index.html` y `ocupacion/index.html` cambia `?v=…` de `app.js` y `app.css`
-   por la misma versión que usa `muestras/index.html` (`20261119`), para que los navegadores carguen el código nuevo.
+   por la misma versión que usa `muestras/index.html` (`20261120`), para que los navegadores carguen el código nuevo.
 4. **Portada.** En el `index.html` raíz añade la tarjeta:
    ```html
    <a class="app" href="muestras/">
