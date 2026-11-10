@@ -1,5 +1,5 @@
 diff --git a/control-ensayos/app.css b/control-ensayos/app.css
-index 084bf03..07ccfd7 100644
+index 084bf03..3634bf9 100644
 --- a/control-ensayos/app.css
 +++ b/control-ensayos/app.css
 @@ -3,7 +3,7 @@
@@ -145,7 +145,7 @@ index 084bf03..07ccfd7 100644
 +  html,body{background:#fff!important;margin:0!important;padding:0!important}
 +  body>*:not(#smp-print){display:none!important}
 +  #smp-print{display:block}
-+  #smp-print .pg{position:relative;overflow:hidden;break-after:page;page-break-after:always}
++  #smp-print .pg{position:relative;overflow:hidden;break-inside:avoid;break-after:page;page-break-after:always}
 +  #smp-print .pg:last-child{break-after:auto;page-break-after:auto}
 +  #smp-print .rot{position:absolute;top:0;left:0;transform-origin:top left}
 +  #smp-print .dlbl{border-radius:0;box-shadow:none}
@@ -161,7 +161,7 @@ index 084bf03..07ccfd7 100644
 +.prop .utbl input{max-width:84px}
 +.dlg-body .prop{margin-top:10px}
 diff --git a/control-ensayos/app.js b/control-ensayos/app.js
-index 3ac3c7e..d2446fd 100644
+index 3ac3c7e..04337be 100644
 --- a/control-ensayos/app.js
 +++ b/control-ensayos/app.js
 @@ -17,16 +17,19 @@ const UNITS=['Hours','Days','Weeks','Cycles'];
@@ -297,7 +297,7 @@ index 3ac3c7e..d2446fd 100644
    if(!db||S.ro) return;
    const kind=dlg.dataset.kind, id=dlg.dataset.id, f=readForm(), now=nowIso(), T=iso(todayMs());
    try{
-@@ -1118,6 +1143,728 @@ async function setTech(id,techId){
+@@ -1118,6 +1143,730 @@ async function setTech(id,techId){
    try{await db.doc(`${COL.tests}/${id}`).update({techId,updated:nowIso()}); const p=personById(techId); toast(`${baseRef(t)} → ${p?p.nombre:'Unassigned'}`);}catch(e){toast(errMsg(e)); render();}
  }
  
@@ -936,8 +936,10 @@ index 3ac3c7e..d2446fd 100644
 +  const rot=['90','270','0','180'].includes(c.rot)?c.rot:'90', tall=rot==='90'||rot==='270';
 +  const pw=tall?sz.h:sz.w, ph=tall?sz.w:sz.h;
 +  const tf={'90':`translateX(${sz.h}mm) rotate(90deg)`,'270':`translateY(${sz.w}mm) rotate(-90deg)`,'0':'none','180':`translate(${sz.w}mm,${sz.h}mm) rotate(180deg)`}[rot];
++  /* The real DYMO stock is a fraction of a mm off the nominal size (11354 is 31.75 × 57.15 mm), so each label box is
++     kept 0.8 mm under the page: a box even slightly taller than the paper spills onto a second, blank label. */
 +  $('#smp-page-size').textContent=`@page{size:${pw}mm ${ph}mm;margin:0}`;
-+  const area=$('#smp-print'); area.innerHTML=keys.map(k=>`<div class="pg" style="width:${pw}mm;height:${ph}mm"><div class="rot" style="width:${sz.w}mm;height:${sz.h}mm;transform:${tf}">${smpLabel(k,c)}</div></div>`).join(''); smpBarcodes(area);
++  const area=$('#smp-print'); area.innerHTML=keys.map(k=>`<div class="pg" style="width:${pw-.8}mm;height:${ph-.8}mm"><div class="rot" style="width:${sz.w}mm;height:${sz.h}mm;transform:${tf}">${smpLabel(k,c)}</div></div>`).join(''); smpBarcodes(area);
 +  dlg.close();
 +  setTimeout(()=>{
 +    window.print(); area.innerHTML='';
@@ -1026,7 +1028,7 @@ index 3ac3c7e..d2446fd 100644
  /* ---------- Events ---------- */
  function setView(v){S.view=v; S.q=''; try{localStorage.setItem(VIEW_KEY,v)}catch(e){} render(); window.scrollTo(0,0);}
  document.addEventListener('click',ev=>{
-@@ -1143,6 +1890,8 @@ document.addEventListener('click',ev=>{
+@@ -1143,6 +1892,8 @@ document.addEventListener('click',ev=>{
    else if(a==='export') exportXlsx();
    else if(a==='gh') openGh();
    else if(a==='gh-off'){disconnectGh(); dlg.close();}
@@ -1035,7 +1037,7 @@ index 3ac3c7e..d2446fd 100644
    else if(a==='sort'){const st=S.sort[t.dataset.table]; if(st.k===t.dataset.k) st.dir=-st.dir; else {st.k=t.dataset.k; st.dir=1;} render();}
    else if(a==='qst'){const s=t.dataset.s; S.qst=S.qst.includes(s)?S.qst.filter(x=>x!==s):[...S.qst,s]; try{localStorage.setItem('tl.qst',JSON.stringify(S.qst))}catch(e){} render();}
    else if(a==='occ-nav'){const dd=+t.dataset.d; S.occ.start=dd===0?mondayOf(todayMs()):(S.occ.start??mondayOf(todayMs()))+dd*7*DAY; render();}
-@@ -1200,43 +1949,75 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1); if(VIE
+@@ -1200,43 +1951,75 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1); if(VIE
  /* ---------- Storage: one JSON file in the private data repository Polinya-LAB/lab-data (folder ensayos/) ----------
     Reading ensayos.json needs the key (token) of an account with read access; saving needs write access;
     every save is a commit. The key is shared with the durability pool app (same site, same browser storage). */
@@ -1121,7 +1123,7 @@ index 3ac3c7e..d2446fd 100644
      CAL.eq=JSON.parse(text).equipment||{}; CAL.err=null;
    }catch(err){CAL.err=err.code||'unavailable';}
    render();
-@@ -1260,19 +2041,21 @@ function emitAll(){ if(!local) return; for(const [col,set] of subs) for(const fn
+@@ -1260,19 +2043,21 @@ function emitAll(){ if(!local) return; for(const [col,set] of subs) for(const fn
  function recompute(){ local=applyOps(clone(remote.data||emptyData()),pendingOps.map(p=>p.op)); emitAll(); }
  function commitMessage(ops){
    const label=o=>{const d={...((remote.data||{})[o.col]||{})[o.id],...(o.data||{})};
@@ -1146,7 +1148,7 @@ index 3ac3c7e..d2446fd 100644
      if(res.ok){const j=await res.json(); Object.assign(remote,{data:next,sha:j.content.sha,etag:null}); return;}
      if(res.status!==409&&res.status!==422) throw httpError(res);
      await new Promise(r=>setTimeout(r,500+Math.random()*800));
-@@ -1282,7 +2065,8 @@ async function commitOps(ops){
+@@ -1282,7 +2067,8 @@ async function commitOps(ops){
  /* Writes show up at once on screen and are saved together, one commit per burst of changes. */
  function queueOp(op){
    return new Promise((res,rej)=>{
@@ -1156,7 +1158,7 @@ index 3ac3c7e..d2446fd 100644
      pendingOps.push({op,res,rej}); recompute();
      clearTimeout(flushTimer); flushTimer=setTimeout(flushOps,700);
    });
-@@ -1294,7 +2078,7 @@ async function flushOps(){
+@@ -1294,7 +2080,7 @@ async function flushOps(){
    GH.saving=true; renderGh();
    flushing=(async()=>{
      try{await commitOps(batch.map(b=>b.op)); batch.forEach(b=>b.res());}
@@ -1165,7 +1167,7 @@ index 3ac3c7e..d2446fd 100644
      finally{flushing=null; GH.saving=!!pendingOps.length; recompute(); renderGh();}
    })();
    return flushing;
-@@ -1308,50 +2092,156 @@ db={doc:docRef,collection:col=>({path:col,doc:id=>docRef(`${col}/${id||rid()}`),
+@@ -1308,50 +2094,156 @@ db={doc:docRef,collection:col=>({path:col,doc:id=>docRef(`${col}/${id||rid()}`),
  
  async function refresh(){
    if(pendingOps.length||flushing) return;
@@ -1333,7 +1335,7 @@ index 3ac3c7e..d2446fd 100644
      remote.etag=null; await refresh(); dlg.close(); render(); loadCal();
      toast(GH.push?`Connected as ${GH.login}. You can now edit.`:`Connected as ${GH.login}, but this account cannot edit the repository.`);
    }catch(err){ btn.disabled=false; btn.textContent='Connect'; formErr(err.code==='auth'?'That key is not valid or has expired.':err.code==='forbidden'?'That key cannot see the repository.':'Could not reach GitHub. Check your connection.'); }
-@@ -1365,9 +2255,18 @@ render();
+@@ -1365,9 +2257,18 @@ render();
  (async()=>{
    let pending=false; const later=()=>{ if(pending) return; pending=true; requestAnimationFrame(()=>{pending=false; render(); if(dlg.open) liveHints();}); };
    const sub=(col,key)=>db.collection(col).onSnapshot(snap=>{S[key]=snap.docs.map(x=>({id:x.id,...x.data()})); S.loaded.add(key); later();});
